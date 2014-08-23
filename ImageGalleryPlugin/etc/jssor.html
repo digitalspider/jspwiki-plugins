@@ -1,0 +1,106 @@
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width'>
+    <title>Carousel Demo - Jssor Slider, Slideshow with Javascript Source Code</title>
+    <script type='text/javascript' src='jssor/js/jssor.slider.min.js'></script>
+    <link rel='stylesheet' media='screen, projection, print' type='text/css' href='jssor/css/jssor.slider.css'/>
+</head>
+
+<body>
+
+<script>
+//<![CDATA[
+    jssor_slider1_starter = function (containerId) {
+		var options = {
+			$AutoPlay: true, $AutoPlaySteps: 1, $AutoPlayInterval: 4000, $PauseOnHover: 1, $SlideWidth: 245, $SlideHeight: 150, $SlideSpacing: 5, $DisplayPieces: 5, $SlideDuration: 360, $ParkingPosition: 4
+
+			,$BulletNavigatorOptions: {
+				$Class: $JssorBulletNavigator$, $ChanceToShow: 2, $AutoCenter: 0, $Steps: 1, $Lanes: 1, $SpacingX: 0, $SpacingY: 0, $Orientation: 1
+			}
+
+			,$ArrowNavigatorOptions: {
+				$Class: $JssorArrowNavigator$, $ChanceToShow: 1, $AutoCenter: 2, $Steps: 1
+			}
+		};
+        var jssor_slider1 = new $JssorSlider$(containerId, options);
+
+		//you can remove responsive code if you dont want the slider scales while window resizes
+		function ScaleSlider() {
+			var bodyWidth = document.body.clientWidth;
+			if (bodyWidth)
+				jssor_slider1.$SetScaleWidth(Math.min(bodyWidth, 1000));
+			else
+				window.setTimeout(ScaleSlider, 30);
+		}
+		ScaleSlider();
+		$JssorUtils$.$AddEvent(window, 'load', ScaleSlider);
+		if (!navigator.userAgent.match(/(iPhone|iPod|iPad|BlackBerry|IEMobile)/)) {
+			$JssorUtils$.$OnWindowResize(window, ScaleSlider);
+		}
+    };
+//]]>
+</script>
+
+<div id='slider1_container' style='position: relative; top: 0px; left: 0px; width: 1000px; height: 150px;'>
+		<!-- Slides Container -->
+		<div u='slides' style='cursor: move; position: absolute; overflow: hidden; left: 0px; top: 0px; width: 100%; height: 100%;'>
+			<div><img u='image' src='assets/fullimage1.jpg' /></div>
+			<div><img u='image' src='assets/owl1.jpg' /></div>
+			<div><img u='image' src='assets/owl2.jpg' /></div>
+			<div><img u='image' src='assets/owl3.jpg' /></div>
+			<div><img u='image' src='assets/owl4.jpg' /></div>
+			<div><img u='image' src='assets/owl5.jpg' /></div>
+			<div><img u='image' src='assets/owl6.jpg' /></div>
+			<div><img u='image' src='assets/owl7.jpg' /></div>
+			<div><img u='image' src='assets/owl8.jpg' /></div>
+		</div>
+        <!-- bullet navigator container -->
+        <div u='navigator' class='jssorb03' style='position: absolute; bottom: 4px; right: 6px;'>
+            <!-- bullet navigator item prototype -->
+            <div u='prototype' style='position: absolute; width: 21px; height: 21px; text-align:center; line-height:21px; color:white; font-size:12px;'><numbertemplate></numbertemplate></div>
+        </div>
+
+        <!-- Arrow Left -->
+        <span u='arrowleft' class='jssora03l' style='width: 55px; height: 55px; top: 123px; left: 8px;'></span>
+        <!-- Arrow Right -->
+        <span u='arrowright' class='jssora03r' style='width: 55px; height: 55px; top: 123px; right: 8px'></span>
+        <!-- Arrow Navigator Skin End -->
+        <a style='display: none' href='http://www.jssor.com'>javascript</a>
+        <!-- Trigger -->
+        <script>jssor_slider1_starter('slider1_container');</script>
+</div>
+
+<div id='slider1_container2' style='position: relative; top: 0px; left: 0px; width: 1000px; height: 150px;'>
+		<!-- Slides Container -->
+		<div u='slides' style='cursor: move; position: absolute; overflow: hidden; left: 0px; top: 0px; width: 100%; height: 100%;'>
+			<div><img u='image' src='assets/fullimage1.jpg' /></div>
+			<div><img u='image' src='assets/owl1.jpg' /></div>
+			<div><img u='image' src='assets/owl2.jpg' /></div>
+			<div><img u='image' src='assets/owl3.jpg' /></div>
+			<div><img u='image' src='assets/owl4.jpg' /></div>
+			<div><img u='image' src='assets/owl5.jpg' /></div>
+			<div><img u='image' src='assets/owl6.jpg' /></div>
+			<div><img u='image' src='assets/owl7.jpg' /></div>
+			<div><img u='image' src='assets/owl8.jpg' /></div>
+		</div>
+        <!-- bullet navigator container -->
+        <div u='navigator' class='jssorb03' style='position: absolute; bottom: 4px; right: 6px;'>
+            <!-- bullet navigator item prototype -->
+            <div u='prototype' style='position: absolute; width: 21px; height: 21px; text-align:center; line-height:21px; color:white; font-size:12px;'><numbertemplate></numbertemplate></div>
+        </div>
+
+        <!-- Arrow Left -->
+        <span u='arrowleft' class='jssora03l' style='width: 55px; height: 55px; top: 123px; left: 8px;'></span>
+        <!-- Arrow Right -->
+        <span u='arrowright' class='jssora03r' style='width: 55px; height: 55px; top: 123px; right: 8px'></span>
+        <!-- Arrow Navigator Skin End -->
+        <a style='display: none' href='http://www.jssor.com'>javascript</a>
+        <!-- Trigger -->
+        <script>jssor_slider1_starter('slider1_container2');</script>
+</div>
+
+</body>
+
+</html>
