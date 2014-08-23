@@ -36,6 +36,8 @@ public class ImageGallery implements WikiPlugin {
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
 	
 	private static final String PROP_URL_PREFIX = "imagegallery.url.";
+	
+	private static final List<String> pageResources = new ArrayList<String>(); 
 
 	private static final String PARAM_WIDTH = "width";
 	private static final String PARAM_HEIGHT = "height";
@@ -107,8 +109,8 @@ public class ImageGallery implements WikiPlugin {
 		List<String> imageUrls = new ArrayList<String>();
 		try {
 			WikiPage currentPage = wikiContext.getPage();
-			TemplateManager.addResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_JSSOR_JS);
-			TemplateManager.addResourceRequest(wikiContext, TemplateManager.RESOURCE_STYLESHEET, RESOURCE_JSSOR_CSS);
+			addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_JSSOR_JS);
+			addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_STYLESHEET, RESOURCE_JSSOR_CSS);
 			if (StringUtils.isNotBlank(url)) {
 				String data = readConnection(url,timeout);
 				log.trace("data = "+data);
@@ -324,6 +326,15 @@ public class ImageGallery implements WikiPlugin {
 			}
 		}
 		log.info("validateParams() DONE");
+	}
+	
+	public void addUniqueTemplateResourceRequest(WikiContext wikiContext, String resourceType, String resourceName) {
+		String pageName = wikiContext.getPage().getName();
+		String pageResource = pageName+":"+resourceType+":"+resourceName;
+		if (!pageResources.contains(pageResource)) {
+			TemplateManager.addResourceRequest(wikiContext, resourceType, resourceName);
+			pageResources.add(pageResource);
+		}
 	}
 	
 	public String findFirstByRegex(String data, String regex) {
@@ -591,8 +602,8 @@ public class ImageGallery implements WikiPlugin {
 			//System.out.println("data = "+data);
 			if (data != null) {
 				String regex = "src=\"(https?:\\/\\/.*\\.(?:png|jpg))\"";
-//				Collection<String> results = plugin.findByRegex(data, regex);
-				Collection<String> results = plugin.findImages(data);
+				Collection<String> results = plugin.findByRegex(data, regex);
+				//Collection<String> results = plugin.findImages(data);
 				System.out.println("results (" + results.size() + ") = " + results);
 			}
 			List<String> attUrls = new ArrayList<String>();
