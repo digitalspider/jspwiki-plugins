@@ -1,0 +1,4 @@
+jspwiki-plugins
+===============
+
+jspwiki plugins
