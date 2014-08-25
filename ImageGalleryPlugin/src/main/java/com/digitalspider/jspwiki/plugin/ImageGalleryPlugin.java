@@ -37,9 +37,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private static final String RESOURCE_JSSOR_JS = "jssor/js/jssor.slider.min.js";
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
 	
-	private static final String PROP_URL_PREFIX = "imagegallery.url.";
-	
-	private static final List<String> pageResources = new ArrayList<String>(); 
+	private static final String PROP_URL_PREFIX = "imagegallery.url."; 
 
 	private static final String PARAM_WIDTH = "width";
 	private static final String PARAM_HEIGHT = "height";
@@ -79,6 +77,8 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private static final String REGEX_URL = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";;
 	private static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9+&@#/%?=~_|!:,.;-]*";
 	private static final String REGEX_IMAGE = "src=\"(https?:\\/\\/.*\\.(?:png|jpg))\"";
+	
+	private List<String> pageResources = new ArrayList<String>();
 	
 	private String sliderId = "slider"+System.identityHashCode(this);
 	private int width = DEFAULT_WIDTH;
@@ -332,7 +332,8 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	
 	public void addUniqueTemplateResourceRequest(WikiContext wikiContext, String resourceType, String resourceName) {
 		String pageName = wikiContext.getPage().getName();
-		String pageResource = pageName+":"+resourceType+":"+resourceName;
+		int pageVersion = wikiContext.getPage().getVersion();
+		String pageResource = pageName+":"+pageVersion+":"+resourceType+":"+resourceName;
 		if (!pageResources.contains(pageResource)) {
 			TemplateManager.addResourceRequest(wikiContext, resourceType, resourceName);
 			pageResources.add(pageResource);
