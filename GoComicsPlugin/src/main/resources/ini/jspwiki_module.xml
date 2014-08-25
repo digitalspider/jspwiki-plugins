@@ -3,5 +3,6 @@
    <plugin class="com.digitalspider.jspwiki.plugin.GoComicsPlugin">
       <author>David Vittor</author>
       <minVersion>2.10.1</minVersion>
+      <alias>GoComics</alias>
    </plugin>
 </modules>
