@@ -37,6 +37,7 @@
                   you can add between <target> and </target> in a
                   build.xml.
                 -->
+                <copy file="target/${artifactId}-${version}.${packaging}" tofile="dist/${artifactId}-${version}.${packaging}"/>
                 <copy file="target/${artifactId}-${version}.${packaging}" tofile="C:/opt/apache-tomcat-7.0.5/webapps/JSPWiki/WEB-INF/lib/${artifactId}-${version}.${packaging}"/>
               </tasks>
             </configuration>
