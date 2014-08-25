@@ -26,11 +26,13 @@ import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.attachment.AttachmentManager;
 import org.apache.wiki.ui.TemplateManager;
 
-public class ImageGallery implements WikiPlugin {
+public class ImageGalleryPlugin implements WikiPlugin {
 
-	private final Logger log = Logger.getLogger(ImageGallery.class);
+	private final Logger log = Logger.getLogger(ImageGalleryPlugin.class);
 
 	// [{ImageGallery url=http://web timeout=1 class=imgGal autoPlay=3000 items=4 lazy=true nav=true suffix=jpg prefix=owl sortby=date sortdesc=true}]
+	
+    protected static boolean c_inited = false;
 	
 	private static final String RESOURCE_JSSOR_JS = "jssor/js/jssor.slider.min.js";
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
@@ -108,9 +110,9 @@ public class ImageGallery implements WikiPlugin {
 
 		List<String> imageUrls = new ArrayList<String>();
 		try {
-			WikiPage currentPage = wikiContext.getPage();
 			addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_JSSOR_JS);
 			addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_STYLESHEET, RESOURCE_JSSOR_CSS);
+			WikiPage currentPage = wikiContext.getPage();
 			if (StringUtils.isNotBlank(url)) {
 				String data = readConnection(url,timeout);
 				log.trace("data = "+data);
@@ -589,7 +591,7 @@ public class ImageGallery implements WikiPlugin {
 		try {
 			
 			
-			ImageGallery plugin = new ImageGallery();
+			ImageGalleryPlugin plugin = new ImageGalleryPlugin();
 			System.out.println("url="+url);
 			url = plugin.findFirstByRegex(url, REGEX_URL);
 			System.out.println("url="+url);

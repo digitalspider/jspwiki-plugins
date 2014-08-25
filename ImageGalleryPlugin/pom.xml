@@ -4,7 +4,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.digitalspider.jspwiki.plugin</groupId>
-  <artifactId>ImageGallery</artifactId>
+  <artifactId>ImageGalleryPlugin</artifactId>
   <packaging>jar</packaging>
   <version>0.1</version>
   <name>ImageGallery Plugin</name>
@@ -23,7 +23,7 @@
     </dependency>
   </dependencies>
 
-  <build>  
+  <build>
     <plugins>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>

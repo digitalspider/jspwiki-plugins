@@ -23,4 +23,30 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <configuration>
+              <tasks>
+                <!--
+                  Place any Ant task here. You can add anything
+                  you can add between <target> and </target> in a
+                  build.xml.
+                -->
+                <copy file="target/${artifactId}-${version}.${packaging}" tofile="C:/opt/apache-tomcat-7.0.5/webapps/JSPWiki/WEB-INF/lib/${artifactId}-${version}.${packaging}"/>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
