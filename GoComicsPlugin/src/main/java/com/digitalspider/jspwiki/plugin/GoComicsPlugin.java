@@ -21,9 +21,9 @@ import org.apache.wiki.WikiContext;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 
-public class GoComicPlugin implements WikiPlugin {
+public class GoComicsPlugin implements WikiPlugin {
 
-	private final Logger log = Logger.getLogger(GoComicPlugin.class);
+	private final Logger log = Logger.getLogger(GoComicsPlugin.class);
 
 	private static final String PROP_BASEURL = "gocomicplugin.baseurl";
 	private static final String PROP_SRCPATH = "gocomicplugin.srcpath";
@@ -81,7 +81,7 @@ public class GoComicPlugin implements WikiPlugin {
 				throw new Exception("No data read from URL");
 			}
 		} catch (Exception e) {
-			throw new PluginException("ERROR: GoComicPlugin url="+url+" ERROR: "+e.getMessage());
+			throw new PluginException("ERROR: GoComicsPlugin url="+url+" ERROR: "+e.getMessage());
 		}
 
 		if (StringUtils.isNotBlank(imgPath)) {
@@ -257,7 +257,7 @@ public class GoComicPlugin implements WikiPlugin {
 		String url = "http://www.gocomics.com/garfield/2014/08/18";
 		String srcPath = "http://assets.amuniversal.com";
 		try {
-			GoComicPlugin plugin = new GoComicPlugin();
+			GoComicsPlugin plugin = new GoComicsPlugin();
 			System.out.println(DATEFORMAT_INPUT.toPattern().toString());
 			System.out.println("Testing regexes");
 			url = plugin.findFirstByRegex(url, REGEX_URL);
