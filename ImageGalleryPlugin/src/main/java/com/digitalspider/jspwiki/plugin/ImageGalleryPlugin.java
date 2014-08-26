@@ -37,8 +37,6 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private static final String RESOURCE_JSSOR_JS = "jssor/js/jssor.slider.min.js";
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
 	
-	private static final String PROP_URL_PREFIX = "imagegallery.url."; 
-
 	private static final String PARAM_WIDTH = "width";
 	private static final String PARAM_HEIGHT = "height";
 	private static final String PARAM_STEPS = "steps";
@@ -204,13 +202,9 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		param = params.get(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
-			String urlProperty = wikiContext.getEngine().getWikiProperties().getProperty(PROP_URL_PREFIX+param);
-			log.info("urlProperty="+urlProperty);
-			if (StringUtils.isNotBlank(urlProperty)) {
-				param = findFirstByRegex(urlProperty, REGEX_URL);
-				if (param != null) {
-					url = param;
-				}
+			param = findFirstByRegex(param, REGEX_URL);
+			if (StringUtils.isNotBlank(param)) {
+				url = param;
 			}
 		}
 		paramName = PARAM_TIMEOUT;
