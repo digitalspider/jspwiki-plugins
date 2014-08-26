@@ -20,9 +20,10 @@ public class HitCountPlugin implements WikiPlugin {
 		try {
 			WikiPage currentPage = wikiContext.getPage();
 			log.info("currentPage="+currentPage);
-			Integer hitCount = (Integer)currentPage.getAttribute(KEY_PAGEHITCOUNT);
-			if (hitCount == null) {
-				hitCount = 0;
+			Object pageHitCountAtt = currentPage.getAttribute(KEY_PAGEHITCOUNT);
+			Integer hitCount = 0;
+			if (pageHitCountAtt != null) {
+				hitCount = Integer.parseInt(pageHitCountAtt.toString());
 			}
 			hitCount++;
 			pageHitCount = hitCount;
