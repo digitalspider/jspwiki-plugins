@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+   <plugin class="com.digitalspider.jspwiki.plugin.JiraPlugin">
+      <author>David Vittor</author>
+      <minVersion>2.10.1</minVersion>
+      <script>/jssor/js/jssor.slider.min.js</script>
+      <stylesheet>/jssor/css/jssor.slider.css</stylesheet>
+      <alias>Jira</alias>
+   </plugin>
+</modules>
