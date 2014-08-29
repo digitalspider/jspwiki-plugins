@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.validator.GenericValidator;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiPage;
@@ -35,6 +34,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	
 	public static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9_+-]*";
 	public static final String REGEX_IMAGE = "src=(\"|')(https?://.*?\\.(?:png|jpg))(\"|')";
+	public static final String REGEX_URL = "^(https?|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 		
 	private static final String RESOURCE_JSSOR_JS = "jssor/js/jssor.slider.min.js";
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
@@ -202,8 +202,9 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		param = params.get(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
-			if (!GenericValidator.isUrl(param)) {
-				throw new PluginException(paramName+" parameter is not a valid url");
+			param = findFirstByRegex(param, REGEX_URL);
+			if (param == null) {
+				throw new PluginException(paramName+" parameter is not a valid url: "+param);
 			}
 			url = param;
 		}
@@ -588,7 +589,8 @@ public class ImageGalleryPlugin implements WikiPlugin {
 			
 			ImageGalleryPlugin plugin = new ImageGalleryPlugin();
 			System.out.println("url="+url);
-			if (!GenericValidator.isUrl(url)) {
+			url = findFirstByRegex(url, REGEX_URL);
+			if (url == null) {
 				throw new Exception("url "+url+" is not valid");
 			}
 			String comic = findFirstByRegex("dilbert-classics",REGEX_PLAINTEXT);

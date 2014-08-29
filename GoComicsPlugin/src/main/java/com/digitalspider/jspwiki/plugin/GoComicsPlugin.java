@@ -44,8 +44,8 @@ public class GoComicsPlugin implements WikiPlugin {
 	private static final int DEFAULT_WIDTH = 600;
 	private static final int DEFAULT_HEIGHT = 200;
 	
-	private static final String REGEX_URL = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";;
-	private static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9+&@#/%?=~_|!:,.;-]*";
+	private static final String REGEX_URL = "^(https?|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+	private static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9_+-]*";
 	
 	private static final Date TODAY = new Date();
 	private static final SimpleDateFormat DATEFORMAT_OUTPUT = new SimpleDateFormat("yyyy/MM/dd");

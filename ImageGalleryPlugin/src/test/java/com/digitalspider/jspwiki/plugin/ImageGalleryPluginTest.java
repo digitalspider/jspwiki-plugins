@@ -4,12 +4,12 @@ import java.util.Collection;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.validator.GenericValidator;
-
 public class ImageGalleryPluginTest extends TestCase {
 
 	String VALID_URL = "http://smh.com.au";
-	String INVALID_URL = "http://smhfsdfwerwrsdfsdf";
+	String FILE_URL = "file://smhfs&%@dfwe?rwrsdfsdf";
+	String FUNNY_URL = "http://smhfs&%@dfwe?rwrsdfsdf";
+	String INVALID_URL = "ht1tp://smhfs&%@dfwe?rwrsdfsdf";
 	String HTML_DATA = 
 			"    <article class='article feature hero-portrait clippingArea clippingAction' data-assetId='d-109sjh' data-assetType='ARTICLE' data-assetUrl='http://www.smh.com.au/world/lady-alqaeda-the-useducated-phd-the-islamic-state-desperately-wants-to-free-20140829-109sjh.html'>"+
 			"        <!-- javascript will insert <button class='clipping' title='Save [headline]'>Add to my clippings</button> here, by using data attributes attached to article tag above.-->"+
@@ -40,8 +40,15 @@ public class ImageGalleryPluginTest extends TestCase {
 	}
 	
 	public void testUrlValidator() {
-		assertTrue(VALID_URL+" should have been a valid URL", GenericValidator.isUrl(VALID_URL));
-		assertFalse(INVALID_URL+" should have been an invalid URL", GenericValidator.isUrl(INVALID_URL));
+		String url = ImageGalleryPlugin.findFirstByRegex(VALID_URL, ImageGalleryPlugin.REGEX_URL);
+		assertEquals(VALID_URL+" should have been a valid URL", VALID_URL, url);
+		url = ImageGalleryPlugin.findFirstByRegex(FUNNY_URL, ImageGalleryPlugin.REGEX_URL);
+		assertEquals(FUNNY_URL+" should have been a valid URL", FUNNY_URL, url);
+		url = ImageGalleryPlugin.findFirstByRegex(FILE_URL, ImageGalleryPlugin.REGEX_URL);
+		assertEquals(FILE_URL+" should have been a valid URL", FILE_URL, url);
+		url = ImageGalleryPlugin.findFirstByRegex(INVALID_URL, ImageGalleryPlugin.REGEX_URL);
+		assertNull(url);
+		assertNotSame(INVALID_URL+" should have been an invalid URL", INVALID_URL, url);
 	}
 	
 	public void testFindImages() {
