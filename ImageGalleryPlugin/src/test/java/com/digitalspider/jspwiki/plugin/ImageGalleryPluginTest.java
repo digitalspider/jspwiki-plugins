@@ -59,5 +59,7 @@ public class ImageGalleryPluginTest extends TestCase {
 		assertEquals("garfield", value);
 		assertEquals("dilbert-classics", ImageGalleryPlugin.findFirstByRegex("dilbert-classics",ImageGalleryPlugin.REGEX_PLAINTEXT));
 		assertEquals("dil", ImageGalleryPlugin.findFirstByRegex("dil//bert-classics",ImageGalleryPlugin.REGEX_PLAINTEXT));
+		assertEquals("dilbert", ImageGalleryPlugin.findFirstByRegex("dilbert?classics",ImageGalleryPlugin.REGEX_PLAINTEXT));
+		assertEquals("di", ImageGalleryPlugin.findFirstByRegex("di&lbert-classics",ImageGalleryPlugin.REGEX_PLAINTEXT));
 	}
 }
