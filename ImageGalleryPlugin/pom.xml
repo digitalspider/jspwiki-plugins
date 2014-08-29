@@ -20,13 +20,13 @@
       <artifactId>jspwiki-war</artifactId>
       <version>2.10.1</version>
       <classifier>classes</classifier>
-      <scope>test provided</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>commons-validator</groupId>
       <artifactId>commons-validator</artifactId>
       <version>1.4.0</version>
-      <scope>test provided</scope>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
