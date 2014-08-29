@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.validator.GenericValidator;
+import org.apache.commons.validator.routines.RegexValidator;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiPage;
@@ -28,12 +30,14 @@ import org.apache.wiki.ui.TemplateManager;
 
 public class ImageGalleryPlugin implements WikiPlugin {
 
-	private final Logger log = Logger.getLogger(ImageGalleryPlugin.class);
+	private static final Logger log = Logger.getLogger(ImageGalleryPlugin.class);
 
 	// [{ImageGallery url=http://web timeout=1 class=imgGal autoPlay=3000 items=4 lazy=true nav=true suffix=jpg prefix=owl sortby=date sortdesc=true}]
 	
-    protected static boolean c_inited = false;
-	
+	public static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9_+-]*";
+	public static final String REGEX_IMAGE = "src=(\"|')(https?://.*?\\.(?:png|jpg))(\"|')";
+	public static final RegexValidator VALIDATOR_PLAINTEXT = new RegexValidator(REGEX_PLAINTEXT);
+		
 	private static final String RESOURCE_JSSOR_JS = "jssor/js/jssor.slider.min.js";
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
 	
@@ -71,10 +75,6 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private static final String DEFAULT_PREFIX = null;
 	private static final String DEFAULT_SORTBY = null;
 	private static final boolean DEFAULT_SORTDESC = false;
-	
-	private static final String REGEX_URL = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";;
-	private static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9+&@#/%?=~_|!:,.;-]*";
-	private static final String REGEX_IMAGE = "src=\"(https?:\\/\\/.*\\.(?:png|jpg))\"";
 	
 	private List<String> pageResources = new ArrayList<String>();
 	
@@ -130,7 +130,9 @@ public class ImageGalleryPlugin implements WikiPlugin {
 					log.info("attachment="+attachment.getName());
 					String url = wikiContext.getEngine().getURLConstructor().makeURL(WikiContext.ATTACH, attachment.getName(), true, null);
 					log.info("url="+url);
-					imageUrls.add(url);
+					if (url != null && url.endsWith("png") || url.endsWith("jpg")) {
+						imageUrls.add(url);
+					}
 				}
 			}
 			log.info("imageUrls ("+imageUrls.size()+")="+imageUrls);
@@ -202,10 +204,10 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		param = params.get(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
-			param = findFirstByRegex(param, REGEX_URL);
-			if (StringUtils.isNotBlank(param)) {
-				url = param;
+			if (!GenericValidator.isUrl(param)) {
+				throw new PluginException(paramName+" parameter is not a valid url");
 			}
+			url = param;
 		}
 		paramName = PARAM_TIMEOUT;
 		param = params.get(paramName);
@@ -226,7 +228,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 			if (!StringUtils.isAsciiPrintable(param)) {
 				throw new PluginException(paramName+" parameter has invalid characters");
 			}
-			param = findFirstByRegex(param, REGEX_PLAINTEXT);
+			param = findFirstByRegex(param,REGEX_PLAINTEXT);
 			if (param != null) {
 				className = param;
 			}
@@ -286,7 +288,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		param = params.get(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
-			param = findFirstByRegex(param, REGEX_PLAINTEXT);
+			param = findFirstByRegex(param,REGEX_PLAINTEXT);
 			if (param != null) {
 				suffix = param;
 			}
@@ -295,7 +297,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		param = params.get(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
-			param = findFirstByRegex(param, REGEX_PLAINTEXT);
+			param = findFirstByRegex(param,REGEX_PLAINTEXT);
 			if (param != null) {
 				prefix = param;
 			}
@@ -334,7 +336,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		}
 	}
 	
-	public String findFirstByRegex(String data, String regex) {
+	public static String findFirstByRegex(String data, String regex) {
 		Collection<String> results = findByRegex(data, regex);
 		if (!results.isEmpty()) {
 			return results.iterator().next();
@@ -342,7 +344,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		return null;
 	}
 	
-	public Collection<String> findImages(String data) {
+	public static Collection<String> findImages(String data) {
 		Collection<String> results = findByRegex(data, REGEX_IMAGE);
 		Collection<String> newResults = new HashSet<String>();
 		for (String result : results) {
@@ -356,7 +358,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		results = null;
 		return newResults;
 	}
-	public Collection<String> findByRegex(String data, String regex) {
+	public static Collection<String> findByRegex(String data, String regex) {
 		String patternString = regex;
 		log.debug("patternString="+patternString);
 		Pattern pattern = Pattern.compile(patternString);
@@ -588,12 +590,10 @@ public class ImageGalleryPlugin implements WikiPlugin {
 			
 			ImageGalleryPlugin plugin = new ImageGalleryPlugin();
 			System.out.println("url="+url);
-			url = plugin.findFirstByRegex(url, REGEX_URL);
-			System.out.println("url="+url);
-			System.out.println("Testing regexes");
-			url = plugin.findFirstByRegex(url, REGEX_URL);
-			System.out.println("url="+url);
-			String comic = plugin.findFirstByRegex("dilbert-classics", REGEX_PLAINTEXT);
+			if (!GenericValidator.isUrl(url)) {
+				throw new Exception("url "+url+" is not valid");
+			}
+			String comic = findFirstByRegex("dilbert-classics",REGEX_PLAINTEXT);
 			System.out.println("comic="+comic);
 			String data = plugin.readConnection(url,DEFAULT_TIMEOUT);
 			//System.out.println("data = "+data);
