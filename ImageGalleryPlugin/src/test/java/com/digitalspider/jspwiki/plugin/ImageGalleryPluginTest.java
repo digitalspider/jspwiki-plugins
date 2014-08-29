@@ -10,9 +10,7 @@ public class ImageGalleryPluginTest extends TestCase {
 
 	String VALID_URL = "http://smh.com.au";
 	String INVALID_URL = "http://smhfsdfwerwrsdfsdf";
-	ImageGalleryPlugin plugin = new ImageGalleryPlugin();
-
-	private static final String HTML_DATA = 
+	String HTML_DATA = 
 			"    <article class='article feature hero-portrait clippingArea clippingAction' data-assetId='d-109sjh' data-assetType='ARTICLE' data-assetUrl='http://www.smh.com.au/world/lady-alqaeda-the-useducated-phd-the-islamic-state-desperately-wants-to-free-20140829-109sjh.html'>"+
 			"        <!-- javascript will insert <button class='clipping' title='Save [headline]'>Add to my clippings</button> here, by using data attributes attached to article tag above.-->"+
 			"                        <a href='http://www.smh.com.au/world/lady-alqaeda-the-useducated-phd-the-islamic-state-desperately-wants-to-free-20140829-109sjh.html' title=''Lady al-Qaeda': The US-educated PhD the Islamic State desperately wants to free'><img src='http://images.smh.com.au/2014/08/29/5718893/ladyalqaeda-300x370.jpg' width='300' height='370' alt='Dr Aafia Siddiqui' /></a>"+

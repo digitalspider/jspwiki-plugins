@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.GenericValidator;
-import org.apache.commons.validator.routines.RegexValidator;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiPage;
@@ -36,7 +35,6 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	
 	public static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9_+-]*";
 	public static final String REGEX_IMAGE = "src=(\"|')(https?://.*?\\.(?:png|jpg))(\"|')";
-	public static final RegexValidator VALIDATOR_PLAINTEXT = new RegexValidator(REGEX_PLAINTEXT);
 		
 	private static final String RESOURCE_JSSOR_JS = "jssor/js/jssor.slider.min.js";
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
