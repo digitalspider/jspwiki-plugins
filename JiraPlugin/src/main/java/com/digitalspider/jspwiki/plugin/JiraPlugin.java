@@ -1,5 +1,12 @@
 package com.digitalspider.jspwiki.plugin;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -8,10 +15,20 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.plugin.WikiPlugin;
+import org.apache.wiki.parser.JSPWikiMarkupParser;
+import org.apache.wiki.parser.WikiDocument;
+import org.apache.wiki.render.XHTMLRenderer;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 import com.atlassian.jira.rest.client.AuthenticationHandler;
 import com.atlassian.jira.rest.client.JiraRestClient;
@@ -57,20 +74,21 @@ public class JiraPlugin implements WikiPlugin {
 	private int max = DEFAULT_MAX;
 	private int start = DEFAULT_START;
 
-	public static Map<String,String> statusImageMap = new HashMap<String, String>();
+	public static Map<String,String> iconImageMapCache = new HashMap<String, String>();
 	
 	static {
-		statusImageMap.put("Closed", "https://issues.apache.org/jira/images/icons/statuses/closed.png");
-		statusImageMap.put("Open", "https://issues.apache.org/jira/images/icons/statuses/open.png");
-		statusImageMap.put("In Progress", "https://issues.apache.org/jira/images/icons/statuses/inprogress.png");
-		statusImageMap.put("Reopened", "https://issues.apache.org/jira/images/icons/statuses/reopened.png");
-		statusImageMap.put("Resolved", "https://issues.apache.org/jira/images/icons/statuses/resolved.png");
+		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/1", "https://issues.apache.org/jira/images/icons/priorities/blocker.png");
+		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/2", "https://issues.apache.org/jira/images/icons/priorities/critical.png");
+		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/3", "https://issues.apache.org/jira/images/icons/priorities/major.png");
+		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/4", "https://issues.apache.org/jira/images/icons/priorities/minor.png");
+		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/3", "https://issues.apache.org/jira/images/icons/priorities/trivial.png");
 	}
 	
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		log.info("STARTED");
-		StringBuffer result = new StringBuffer();
+		String result = "";
+		StringBuffer buffer = new StringBuffer();
 		
 		// Validate all parameters
 		validateParams(wikiContext,params);
@@ -80,19 +98,28 @@ public class JiraPlugin implements WikiPlugin {
 			
 			List<Issue> issues = doJQLSearch(restClient, project, max, start, jql);
 			if (!issues.isEmpty()) {
-				result.append("|| Key || Priority || Type || Summary || Status || Resolution || Assignee || Reporter || Comments ||");
-				result.append("<br/>");
+				buffer.append("|| Key || Priority || Type || Summary || Status || Resolution || Assignee || Reporter || Comments");
+				buffer.append("\n");
+//				buffer.append("<br/>");
 			}
 			for (Issue issue : issues) {
-				result.append(getIssueAsWikiText(jiraBaseUrl,issue));
-				result.append("<br/>");
+				buffer.append(getIssueAsWikiText(jiraBaseUrl,issue));
+				buffer.append("\n");
+//				buffer.append("<br/>");
 			}
+			Reader in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buffer.toString().getBytes())));
+			JSPWikiMarkupParser parser = new JSPWikiMarkupParser(wikiContext, in);
+			WikiDocument doc = parser.parse();
+			log.debug("doc="+doc);
+			XHTMLRenderer renderer = new XHTMLRenderer(wikiContext, doc);
+			result = renderer.getString();
+			//result += "<br/><br/>"+buffer.toString();
 		} catch (Throwable e) {
 			log.error(e,e);
 			throw new PluginException("ERROR: "+e);
 		}
 		
-		return result.toString();
+		return result;
 	}
 
 	protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
@@ -206,21 +233,31 @@ public class JiraPlugin implements WikiPlugin {
 		return issues;
 	}
 	
-	public static String getIssueAsWikiText(String jiraBaseUrl, Issue issue) {
+	public static String getIconUrl(String url) throws JSONException {
+		JSONParser parser = new JSONParser();
+		JSONObject jsonObject = parser.getJSONFromUrl(url);
+		String iconUrl = (String)jsonObject.get("iconUrl");
+		String name = (String)jsonObject.get("name");
+		String id = (String)jsonObject.get("id");
+		return iconUrl;
+	}
+
+	public static String getIssueAsWikiText(String jiraBaseUrl, Issue issue) throws JSONException {
 		if (issue == null) {
 			return "";
 		}
 		String DELIM = " | ";
-		String link = "<a href='"+jiraBaseUrl+"/browse/"+issue.getKey()+"'>"+issue.getKey()+"</a>";
-		String priority = issue.getPriority() == null ? "" : issue.getPriority().getName();
-		String status = issue.getStatus() == null ? "" : issue.getStatus().getName();
+//		String link = "<a href='"+jiraBaseUrl+"/browse/"+issue.getKey()+"'>"+issue.getKey()+"</a>";
+		String link = "["+issue.getKey()+"|"+jiraBaseUrl+"/browse/"+issue.getKey()+"]";
+		String priority = issue.getPriority() == null ? "" : "["+ getCachedIconUrl(issue.getPriority().getSelf().toString()) + "]";
+		String status = issue.getStatus() == null ? "" : "["+ getCachedIconUrl(issue.getStatus().getSelf().toString()) + "]";
 		String resolution = issue.getResolution() == null ? "" : issue.getResolution().getName();
-		String type = issue.getIssueType() == null ? "" : issue.getIssueType().getName();
+		String type = issue.getIssueType() == null ? "" : "["+ getCachedIconUrl(issue.getIssueType().getSelf().toString()) + "]";
 		String summary = issue.getSummary();
 		String assignee = issue.getAssignee() == null ? "" : issue.getAssignee().getDisplayName();
 		String reporter = issue.getReporter() == null ? "" : issue.getReporter().getDisplayName();
 		String comments = Integer.toString(countComments(issue));
-		String result = "| "+link+DELIM+priority+DELIM+type+DELIM+summary+DELIM+status+DELIM+resolution+DELIM+assignee+DELIM+reporter+DELIM+comments+" |";
+		String result = "| "+link+DELIM+priority+DELIM+type+DELIM+summary+DELIM+status+DELIM+resolution+DELIM+assignee+DELIM+reporter+DELIM+comments;
 		log.debug("result="+result);
 		return result;
 	}
@@ -236,5 +273,75 @@ public class JiraPlugin implements WikiPlugin {
 		}
 		log.debug("Found +"+i+" comments for issue "+issue.getKey());
 		return i;
+	}
+	
+	public static String getCachedIconUrl(String url) throws JSONException {
+		if (iconImageMapCache.containsKey(url)) {
+			return iconImageMapCache.get(url);
+		}
+		String iconUrl = getIconUrl(url);
+		iconImageMapCache.put(url,iconUrl);
+		return iconUrl;
+	}
+	
+
+	public static class JSONParser {
+		Logger log = Logger.getLogger(JSONParser.class);
+		InputStream is = null;
+		JSONObject jObj = null;
+		String json = "";
+		
+		// constructor
+		public JSONParser() {
+		
+		}
+		
+		public JSONObject getJSONFromUrl(String url) {
+		
+		    // Making HTTP request
+		    try {
+		        // defaultHttpClient
+		        DefaultHttpClient httpClient = new DefaultHttpClient();
+		        HttpGet httpGet = new HttpGet(url);
+		
+		        HttpResponse httpResponse = httpClient.execute(httpGet);
+		        HttpEntity httpEntity = httpResponse.getEntity();
+		        is = httpEntity.getContent();
+		
+		    } catch (UnsupportedEncodingException e) {
+		        e.printStackTrace();
+		    } catch (ClientProtocolException e) {
+		        e.printStackTrace();
+		    } catch (IOException e) {
+		        e.printStackTrace();
+		    }
+		
+		    try {
+		        BufferedReader reader = new BufferedReader(new InputStreamReader(is, "iso-8859-1"), 8);
+		        StringBuilder sb = new StringBuilder();
+		        String line = null;
+		        while ((line = reader.readLine()) != null) {
+		            sb.append(line + "\n");
+//		            System.out.println(line);
+		        }
+		        is.close();
+		        json = sb.toString();
+		
+		    } catch (Exception e) {
+		        log.error("Error converting result " + e.toString());
+		    }
+		
+		    // try parse the string to a JSON object
+		    try {
+		        jObj = new JSONObject(json);
+		    } catch (JSONException e) {
+		        log.error("Error parsing data " + e.toString());
+		        System.out.println("error on parse data in jsonparser.java");
+		    }
+		
+		    // return JSON String
+		    return jObj;
+		
+		}
 	}
 }

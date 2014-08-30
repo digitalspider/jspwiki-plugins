@@ -6,6 +6,7 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
+import org.codehaus.jettison.json.JSONException;
 
 import com.atlassian.jira.rest.client.JiraRestClient;
 import com.atlassian.jira.rest.client.domain.Issue;
@@ -23,11 +24,14 @@ public class JiraPluginTest extends TestCase {
 		restClient = null;
 	}
 	
-	public void testJiraConnection() throws URISyntaxException {
+	public void testJiraConnection() throws URISyntaxException, JSONException {
         assertNotNull(restClient);
         Issue issue1 = restClient.getIssueClient().getIssue("JSPWIKI-864").claim();
         assertNotNull(issue1);
         assertEquals("JSPWIKI-864",issue1.getKey());
+        String expected = "https://issues.apache.org/jira/images/icons/statuses/resolved.png";
+        String iconUrl = JiraPlugin.getIconUrl(issue1.getStatus().getSelf().toString());
+        assertEquals(expected, iconUrl);
 //        System.out.println("issue ="+issue1.getKey()+" "+issue1.getSummary());
 	}
 	
@@ -48,13 +52,13 @@ public class JiraPluginTest extends TestCase {
         }
 	}
 	
-	public void testPrintIssue() {
+	public void testPrintIssue() throws JSONException {
         Issue issue = restClient.getIssueClient().getIssue("JSPWIKI-123").claim();
         assertNotNull(issue);
         log.debug(issue.getKey()+" "+issue.getSummary()+" "+issue.getStatus().getName());
         log.trace(issue);
         // | ID | Type | Priority | Summary | Status | Resolution | Assignee | Reporter | Comments
-        String expected = "| <a href='https://issues.apache.org/jira/browse/JSPWIKI-123'>JSPWIKI-123</a> | Minor | Improvement | missing german date format | Closed | Fixed |  | Florian Holeczek | 11 |";
+        String expected = "| [JSPWIKI-123|https://issues.apache.org/jira/browse/JSPWIKI-123] | [https://issues.apache.org/jira/images/icons/priorities/minor.png] | [https://issues.apache.org/jira/images/icons/issuetypes/improvement.png] | missing german date format | [https://issues.apache.org/jira/images/icons/statuses/closed.png] | Fixed |  | Florian Holeczek | 11";
         String actual = JiraPlugin.getIssueAsWikiText(JiraPlugin.DEFAULT_JIRA_BASEURL,issue);
         assertEquals(expected, actual);
 	}
