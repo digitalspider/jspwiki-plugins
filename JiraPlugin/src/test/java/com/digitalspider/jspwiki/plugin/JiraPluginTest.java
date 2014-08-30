@@ -13,13 +13,10 @@ import com.atlassian.jira.rest.client.domain.Issue;
 public class JiraPluginTest extends TestCase {
 
 	Logger log = Logger.getLogger(JiraPluginTest.class);
-	String JIRA_URL = "https://issues.apache.org/jira";
-	String PROJECT_KEY= "JSPWIKI";
-	String JQL = "project = JSPWIKI and status = Open order by key DESC";
 	JiraRestClient restClient;
 	
     public void setUp() throws Exception {
-    	restClient = JiraPlugin.getRestClient(JIRA_URL);
+    	restClient = JiraPlugin.getRestClient(JiraPlugin.DEFAULT_JIRA_BASEURL);
     }
     
 	public void tearDown() throws Exception {
@@ -37,7 +34,7 @@ public class JiraPluginTest extends TestCase {
 	public void testSearch() throws URISyntaxException {
         int max = 10;
         int start = 0;
-        List<Issue> issues = JiraPlugin.doJQLSearch(restClient, "JSPWIKI", max, start, JQL);
+        List<Issue> issues = JiraPlugin.doJQLSearch(restClient, "JSPWIKI", max, start, JiraPlugin.DEFAULT_JQL);
 
         assertEquals(max,issues.size());
         for (Issue issue : issues) {
@@ -47,18 +44,18 @@ public class JiraPluginTest extends TestCase {
         	assertNotNull(issue.getSelf());
         	
         	assertEquals("Open",issue.getStatus().getName());
-//        	System.out.println(issue.getKey()+" "+issue.getSummary()+" "+issue.getStatus());
+        	log.info(issue.getKey()+" "+issue.getSummary()+" "+issue.getStatus());
         }
 	}
 	
 	public void testPrintIssue() {
         Issue issue = restClient.getIssueClient().getIssue("JSPWIKI-123").claim();
         assertNotNull(issue);
-//        System.out.println(issue.getKey()+" "+issue.getSummary()+" "+issue.getStatus().getName());
-//        System.out.println(issue);
+        log.debug(issue.getKey()+" "+issue.getSummary()+" "+issue.getStatus().getName());
+        log.trace(issue);
         // | ID | Type | Priority | Summary | Status | Resolution | Assignee | Reporter | Comments
-        String expected = "| <a href='https://issues.apache.org/jira/browse/JSPWIKI-123'>JSPWIKI-123</a> | Minor | Improvement | missing german date format | Closed | Fixed |  | Florian Holeczek | 11 |";
-        String actual = JiraPlugin.getIssueStringToDisplay(issue);
+        String expected = "| <a href='https://issues.apache.org/jira/browse/JSPWIKI-123'>JSPWIKI-123</a> | Minor | Improvement | missing german date format | Closed | Fixed |  | Florian Holeczek | 11 |<br/>";
+        String actual = JiraPlugin.getIssueStringToDisplay(JiraPlugin.DEFAULT_JIRA_BASEURL,issue);
         assertEquals(expected, actual);
 	}
 	
