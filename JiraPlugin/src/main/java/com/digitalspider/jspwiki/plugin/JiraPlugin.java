@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.api.exceptions.PluginException;
@@ -37,6 +38,7 @@ public class JiraPlugin implements WikiPlugin {
 	public static final String DEFAULT_PROJECT = "JSPWIKI";
 	public static final String DEFAULT_JQL = "status = open order by key DESC";
 	public static final int DEFAULT_MAX = 10;
+	public static final int UPPERLIMIT_MAX = 50;
 	public static final int DEFAULT_START = 0;
 	
 	private static final String PROP_JIRA_BASEURL = "jira.baseurl";
@@ -74,12 +76,16 @@ public class JiraPlugin implements WikiPlugin {
 		validateParams(wikiContext,params);
 		
 		try {
-			JiraRestClient restClient = getRestClient(jiraBaseUrl);
+			JiraRestClient restClient = getRestClient(jiraBaseUrl,jiraUsername,jiraPassword);
 			
-			
-			List<Issue> issues = doJQLSearch(restClient, project, jql);
+			List<Issue> issues = doJQLSearch(restClient, project, max, start, jql);
+			if (!issues.isEmpty()) {
+				result.append("|| Key || Priority || Type || Summary || Status || Resolution || Assignee || Reporter || Comments ||");
+				result.append("<br/>");
+			}
 			for (Issue issue : issues) {
-				result.append(getIssueStringToDisplay(jiraBaseUrl,issue));
+				result.append(getIssueAsWikiText(jiraBaseUrl,issue));
+				result.append("<br/>");
 			}
 		} catch (Throwable e) {
 			log.error(e,e);
@@ -94,16 +100,73 @@ public class JiraPlugin implements WikiPlugin {
 		String param;
 		
 		log.info("validateParams() START");
-		log.info("validateParams() DONE");
-	}
-	
-	public static void main(String[] args) {
-		String url = "http://www.gocomics.com/garfield/2014/08/18";
-		try {
-			System.out.println(url);
-		} catch (Exception e) {
-			e.printStackTrace();
+		paramName = PROP_JIRA_BASEURL;
+		param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+		if (StringUtils.isNotBlank(param)) {
+			log.info(paramName+"="+param);
+			if (!StringUtils.isAsciiPrintable(param)) {
+				throw new PluginException(paramName+" parameter is not a valid value");
+			}
+			jiraBaseUrl = param;
 		}
+		paramName = PROP_JIRA_USERNAME;
+		param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+		if (StringUtils.isNotBlank(param)) {
+			log.info(paramName+"="+param);
+			if (!StringUtils.isAsciiPrintable(param)) {
+				throw new PluginException(paramName+" parameter is not a valid value");
+			}
+			jiraUsername = param;
+		}
+		paramName = PROP_JIRA_PASSWORD;
+		param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+		if (StringUtils.isNotBlank(param)) {
+			log.info(paramName+"="+param);
+			if (!StringUtils.isAsciiPrintable(param)) {
+				throw new PluginException(paramName+" parameter is not a valid value");
+			}
+			jiraPassword = param;
+		}
+		paramName = PARAM_PROJECT;
+		param = params.get(paramName);
+		if (StringUtils.isNotBlank(param)) {
+			log.info(paramName+"="+param);
+			if (!StringUtils.isAsciiPrintable(param)) {
+				throw new PluginException(paramName+" parameter is not a valid value");
+			}
+			project = param;
+		}
+		paramName = PARAM_JQL;
+		param = params.get(paramName);
+		if (StringUtils.isNotBlank(param)) {
+			log.info(paramName+"="+param);
+			if (!StringUtils.isAsciiPrintable(param)) {
+				throw new PluginException(paramName+" parameter is not a valid value");
+			}
+			jql = param;
+		}
+		paramName = PARAM_MAX;
+		param = params.get(paramName);
+		if (StringUtils.isNotBlank(param)) {
+			log.info(paramName+"="+param);
+			if (!StringUtils.isNumeric(param)) {
+				throw new PluginException(paramName+" parameter is not a valid value");
+			}
+			max = Integer.parseInt(param);
+			if (max > UPPERLIMIT_MAX) {
+				max = UPPERLIMIT_MAX;
+			}
+		}
+		paramName = PARAM_START;
+		param = params.get(paramName);
+		if (StringUtils.isNotBlank(param)) {
+			log.info(paramName+"="+param);
+			if (!StringUtils.isNumeric(param)) {
+				throw new PluginException(paramName+" parameter is not a valid value");
+			}
+			start = Integer.parseInt(param);
+		}
+		log.info("validateParams() DONE");
 	}
 	
 	public static JiraRestClient getRestClient(String url) throws URISyntaxException {
@@ -114,7 +177,7 @@ public class JiraPlugin implements WikiPlugin {
         final AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
         final URI jiraServerUri = new URI(url);
         AuthenticationHandler auth = new AnonymousAuthenticationHandler();
-        if (username != null && password != null) {
+        if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
         	auth = new BasicHttpAuthenticationHandler(username,password);
         }
         final JiraRestClient restClient = factory.create(jiraServerUri, auth);
@@ -143,7 +206,7 @@ public class JiraPlugin implements WikiPlugin {
 		return issues;
 	}
 	
-	public static String getIssueStringToDisplay(String jiraBaseUrl, Issue issue) {
+	public static String getIssueAsWikiText(String jiraBaseUrl, Issue issue) {
 		if (issue == null) {
 			return "";
 		}
@@ -157,7 +220,7 @@ public class JiraPlugin implements WikiPlugin {
 		String assignee = issue.getAssignee() == null ? "" : issue.getAssignee().getDisplayName();
 		String reporter = issue.getReporter() == null ? "" : issue.getReporter().getDisplayName();
 		String comments = Integer.toString(countComments(issue));
-		String result = "| "+link+DELIM+priority+DELIM+type+DELIM+summary+DELIM+status+DELIM+resolution+DELIM+assignee+DELIM+reporter+DELIM+comments+" |<br/>";
+		String result = "| "+link+DELIM+priority+DELIM+type+DELIM+summary+DELIM+status+DELIM+resolution+DELIM+assignee+DELIM+reporter+DELIM+comments+" |";
 		log.debug("result="+result);
 		return result;
 	}

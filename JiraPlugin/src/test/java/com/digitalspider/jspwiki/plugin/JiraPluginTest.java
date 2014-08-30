@@ -54,8 +54,8 @@ public class JiraPluginTest extends TestCase {
         log.debug(issue.getKey()+" "+issue.getSummary()+" "+issue.getStatus().getName());
         log.trace(issue);
         // | ID | Type | Priority | Summary | Status | Resolution | Assignee | Reporter | Comments
-        String expected = "| <a href='https://issues.apache.org/jira/browse/JSPWIKI-123'>JSPWIKI-123</a> | Minor | Improvement | missing german date format | Closed | Fixed |  | Florian Holeczek | 11 |<br/>";
-        String actual = JiraPlugin.getIssueStringToDisplay(JiraPlugin.DEFAULT_JIRA_BASEURL,issue);
+        String expected = "| <a href='https://issues.apache.org/jira/browse/JSPWIKI-123'>JSPWIKI-123</a> | Minor | Improvement | missing german date format | Closed | Fixed |  | Florian Holeczek | 11 |";
+        String actual = JiraPlugin.getIssueAsWikiText(JiraPlugin.DEFAULT_JIRA_BASEURL,issue);
         assertEquals(expected, actual);
 	}
 	
