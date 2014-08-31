@@ -10,6 +10,7 @@ import org.codehaus.jettison.json.JSONException;
 
 import com.atlassian.jira.rest.client.JiraRestClient;
 import com.atlassian.jira.rest.client.domain.Issue;
+import com.digitalspider.jspwiki.plugin.JiraPlugin.MetadataType;
 
 public class JiraPluginTest extends TestCase {
 
@@ -30,7 +31,7 @@ public class JiraPluginTest extends TestCase {
         assertNotNull(issue1);
         assertEquals("JSPWIKI-864",issue1.getKey());
         String expected = "https://issues.apache.org/jira/images/icons/statuses/resolved.png";
-        String iconUrl = JiraPlugin.getIconUrl(issue1.getStatus().getSelf().toString());
+        String iconUrl = JiraPlugin.getIconUrl(restClient,MetadataType.STATUS,issue1.getStatus().getSelf());
         assertEquals(expected, iconUrl);
 //        System.out.println("issue ="+issue1.getKey()+" "+issue1.getSummary());
 	}
@@ -59,7 +60,7 @@ public class JiraPluginTest extends TestCase {
         log.trace(issue);
         // | ID | Type | Priority | Summary | Status | Resolution | Assignee | Reporter | Comments
         String expected = "| [JSPWIKI-123|https://issues.apache.org/jira/browse/JSPWIKI-123] | [https://issues.apache.org/jira/images/icons/priorities/minor.png] | [https://issues.apache.org/jira/images/icons/issuetypes/improvement.png] | missing german date format | [https://issues.apache.org/jira/images/icons/statuses/closed.png] | Fixed |  | Florian Holeczek | 11";
-        String actual = JiraPlugin.getIssueAsWikiText(JiraPlugin.DEFAULT_JIRA_BASEURL,issue);
+        String actual = JiraPlugin.getIssueAsWikiText(restClient,JiraPlugin.DEFAULT_JIRA_BASEURL,issue);
         assertEquals(expected, actual);
 	}
 	

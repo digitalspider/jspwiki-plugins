@@ -2,11 +2,8 @@ package com.digitalspider.jspwiki.plugin;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -15,11 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.api.exceptions.PluginException;
@@ -28,7 +20,6 @@ import org.apache.wiki.parser.JSPWikiMarkupParser;
 import org.apache.wiki.parser.WikiDocument;
 import org.apache.wiki.render.XHTMLRenderer;
 import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 
 import com.atlassian.jira.rest.client.AuthenticationHandler;
 import com.atlassian.jira.rest.client.JiraRestClient;
@@ -38,7 +29,10 @@ import com.atlassian.jira.rest.client.auth.BasicHttpAuthenticationHandler;
 import com.atlassian.jira.rest.client.domain.BasicIssue;
 import com.atlassian.jira.rest.client.domain.Comment;
 import com.atlassian.jira.rest.client.domain.Issue;
+import com.atlassian.jira.rest.client.domain.IssueType;
+import com.atlassian.jira.rest.client.domain.Priority;
 import com.atlassian.jira.rest.client.domain.SearchResult;
+import com.atlassian.jira.rest.client.domain.Status;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 
 /**
@@ -48,7 +42,11 @@ import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientF
 public class JiraPlugin implements WikiPlugin {
 	
 	private static final Logger log = Logger.getLogger(JiraPlugin.class);
-	
+
+	public enum MetadataType {
+		PRIORITY, STATUS, ISSUETYPE
+	}
+
 	public static final String DEFAULT_JIRA_BASEURL = "https://issues.apache.org/jira";
 	public static final String DEFAULT_JIRA_USERNAME = null;
 	public static final String DEFAULT_JIRA_PASSWORD = null;
@@ -74,15 +72,7 @@ public class JiraPlugin implements WikiPlugin {
 	private int max = DEFAULT_MAX;
 	private int start = DEFAULT_START;
 
-	public static Map<String,String> iconImageMapCache = new HashMap<String, String>();
-	
-	static {
-		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/1", "https://issues.apache.org/jira/images/icons/priorities/blocker.png");
-		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/2", "https://issues.apache.org/jira/images/icons/priorities/critical.png");
-		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/3", "https://issues.apache.org/jira/images/icons/priorities/major.png");
-		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/4", "https://issues.apache.org/jira/images/icons/priorities/minor.png");
-		iconImageMapCache.put("https://issues.apache.org/jira/rest/api/2/priority/3", "https://issues.apache.org/jira/images/icons/priorities/trivial.png");
-	}
+	private static Map<String,String> iconImageMapCache = new HashMap<String, String>();
 	
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
@@ -103,7 +93,7 @@ public class JiraPlugin implements WikiPlugin {
 //				buffer.append("<br/>");
 			}
 			for (Issue issue : issues) {
-				buffer.append(getIssueAsWikiText(jiraBaseUrl,issue));
+				buffer.append(getIssueAsWikiText(restClient,jiraBaseUrl,issue));
 				buffer.append("\n");
 //				buffer.append("<br/>");
 			}
@@ -233,26 +223,32 @@ public class JiraPlugin implements WikiPlugin {
 		return issues;
 	}
 	
-	public static String getIconUrl(String url) throws JSONException {
-		JSONParser parser = new JSONParser();
-		JSONObject jsonObject = parser.getJSONFromUrl(url);
-		String iconUrl = (String)jsonObject.get("iconUrl");
-		String name = (String)jsonObject.get("name");
-		String id = (String)jsonObject.get("id");
-		return iconUrl;
+	public static String getIconUrl(JiraRestClient jiraRestClient, MetadataType type, URI uri) throws JSONException {
+		switch (type) {
+			case PRIORITY:
+				Priority priority = jiraRestClient.getMetadataClient().getPriority(uri).claim();
+				return priority.getIconUri().toString();
+			case STATUS:
+				Status status = jiraRestClient.getMetadataClient().getStatus(uri).claim();
+				return status.getIconUrl().toString();
+			case ISSUETYPE:
+				IssueType issueType = jiraRestClient.getMetadataClient().getIssueType(uri).claim();
+				return issueType.getIconUri().toString();
+		}
+		return null;
 	}
 
-	public static String getIssueAsWikiText(String jiraBaseUrl, Issue issue) throws JSONException {
+	public static String getIssueAsWikiText(JiraRestClient jiraRestClient, String jiraBaseUrl, Issue issue) throws JSONException {
 		if (issue == null) {
 			return "";
 		}
 		String DELIM = " | ";
 //		String link = "<a href='"+jiraBaseUrl+"/browse/"+issue.getKey()+"'>"+issue.getKey()+"</a>";
 		String link = "["+issue.getKey()+"|"+jiraBaseUrl+"/browse/"+issue.getKey()+"]";
-		String priority = issue.getPriority() == null ? "" : "["+ getCachedIconUrl(issue.getPriority().getSelf().toString()) + "]";
-		String status = issue.getStatus() == null ? "" : "["+ getCachedIconUrl(issue.getStatus().getSelf().toString()) + "]";
+		String priority = issue.getPriority() == null ? "" : "["+ getCachedIconUrl(jiraRestClient,MetadataType.PRIORITY,issue.getPriority().getSelf()) + "]";
+		String status = issue.getStatus() == null ? "" : "["+ getCachedIconUrl(jiraRestClient,MetadataType.PRIORITY,issue.getStatus().getSelf()) + "]";
 		String resolution = issue.getResolution() == null ? "" : issue.getResolution().getName();
-		String type = issue.getIssueType() == null ? "" : "["+ getCachedIconUrl(issue.getIssueType().getSelf().toString()) + "]";
+		String type = issue.getIssueType() == null ? "" : "["+ getCachedIconUrl(jiraRestClient,MetadataType.PRIORITY,issue.getIssueType().getSelf()) + "]";
 		String summary = issue.getSummary();
 		String assignee = issue.getAssignee() == null ? "" : issue.getAssignee().getDisplayName();
 		String reporter = issue.getReporter() == null ? "" : issue.getReporter().getDisplayName();
@@ -275,73 +271,14 @@ public class JiraPlugin implements WikiPlugin {
 		return i;
 	}
 	
-	public static String getCachedIconUrl(String url) throws JSONException {
-		if (iconImageMapCache.containsKey(url)) {
-			return iconImageMapCache.get(url);
+	public static String getCachedIconUrl(JiraRestClient jiraRestClient,MetadataType type,URI url) throws JSONException {
+		if (iconImageMapCache.containsKey(url.toString())) {
+			return iconImageMapCache.get(url.toString());
 		}
-		String iconUrl = getIconUrl(url);
-		iconImageMapCache.put(url,iconUrl);
+		String iconUrl = getIconUrl(jiraRestClient,type,url);
+		if (iconUrl != null) {
+			iconImageMapCache.put(url.toString(),iconUrl);
+		}
 		return iconUrl;
-	}
-	
-
-	public static class JSONParser {
-		Logger log = Logger.getLogger(JSONParser.class);
-		InputStream is = null;
-		JSONObject jObj = null;
-		String json = "";
-		
-		// constructor
-		public JSONParser() {
-		
-		}
-		
-		public JSONObject getJSONFromUrl(String url) {
-		
-		    // Making HTTP request
-		    try {
-		        // defaultHttpClient
-		        DefaultHttpClient httpClient = new DefaultHttpClient();
-		        HttpGet httpGet = new HttpGet(url);
-		
-		        HttpResponse httpResponse = httpClient.execute(httpGet);
-		        HttpEntity httpEntity = httpResponse.getEntity();
-		        is = httpEntity.getContent();
-		
-		    } catch (UnsupportedEncodingException e) {
-		        e.printStackTrace();
-		    } catch (ClientProtocolException e) {
-		        e.printStackTrace();
-		    } catch (IOException e) {
-		        e.printStackTrace();
-		    }
-		
-		    try {
-		        BufferedReader reader = new BufferedReader(new InputStreamReader(is, "iso-8859-1"), 8);
-		        StringBuilder sb = new StringBuilder();
-		        String line = null;
-		        while ((line = reader.readLine()) != null) {
-		            sb.append(line + "\n");
-//		            System.out.println(line);
-		        }
-		        is.close();
-		        json = sb.toString();
-		
-		    } catch (Exception e) {
-		        log.error("Error converting result " + e.toString());
-		    }
-		
-		    // try parse the string to a JSON object
-		    try {
-		        jObj = new JSONObject(json);
-		    } catch (JSONException e) {
-		        log.error("Error parsing data " + e.toString());
-		        System.out.println("error on parse data in jsonparser.java");
-		    }
-		
-		    // return JSON String
-		    return jObj;
-		
-		}
 	}
 }
