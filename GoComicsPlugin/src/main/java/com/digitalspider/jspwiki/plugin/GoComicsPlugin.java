@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2014 David Vittor http://digitalspider.com.au
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.digitalspider.jspwiki.plugin;
 
 import java.io.InputStream;
@@ -34,7 +49,7 @@ public class GoComicsPlugin implements WikiPlugin {
 	private static final String PARAM_CLASS = "class";
 	private static final String PARAM_WIDTH = "width";
 	private static final String PARAM_HEIGHT = "height";
-	
+
 	private static final int DEFAULT_TIMEOUT = 10; // In seconds
 	private static final int MAX_TIMEOUT = 120; // In seconds
 	private static final String DEFAULT_SRCPATH = "http://assets.amuniversal.com";
@@ -43,14 +58,14 @@ public class GoComicsPlugin implements WikiPlugin {
 	private static final String DEFAULT_CLASS = "comic";
 	private static final int DEFAULT_WIDTH = 600;
 	private static final int DEFAULT_HEIGHT = 200;
-	
+
 	private static final String REGEX_URL = "^(https?|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 	private static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9_+-]*";
-	
+
 	private static final Date TODAY = new Date();
 	private static final SimpleDateFormat DATEFORMAT_OUTPUT = new SimpleDateFormat("yyyy/MM/dd");
 	private static final SimpleDateFormat DATEFORMAT_INPUT = new SimpleDateFormat("yyyyMMdd");
-	
+
 	private String url = DEFAULT_BASEPATH+DEFAULT_COMIC+"/"+DATEFORMAT_OUTPUT.format(TODAY);
 	private String srcPath = DEFAULT_SRCPATH;
 	private int timeout = DEFAULT_TIMEOUT;
@@ -64,7 +79,7 @@ public class GoComicsPlugin implements WikiPlugin {
 
 		// Validate all parameters
 		validateParams(wikiContext,params);
-		
+
 		log.info("url="+url+" srcPath="+srcPath+" timeout="+timeout);
 
 		String imgPath = "";
@@ -85,7 +100,7 @@ public class GoComicsPlugin implements WikiPlugin {
 		}
 
 		if (StringUtils.isNotBlank(imgPath)) {
-			imgPath = "<div class='"+className+"'><img src='"+imgPath+"' alt='"+imgPath+"' width='"+width+"' height='"+height+"'/></div>"; 
+			imgPath = "<div class='"+className+"'><img src='"+imgPath+"' alt='"+imgPath+"' width='"+width+"' height='"+height+"'/></div>";
 		}
 		log.info("imgPath="+imgPath);
 		log.info("DONE.");
@@ -95,7 +110,7 @@ public class GoComicsPlugin implements WikiPlugin {
 	protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		String paramName;
 		String param;
-		
+
 		log.info("validateParams() START");
 		paramName = PARAM_TIMEOUT;
 		param = params.get(paramName);
@@ -182,7 +197,7 @@ public class GoComicsPlugin implements WikiPlugin {
 		}
 		log.info("validateParams() DONE");
 	}
-	
+
 	public String findFirstUrlBySrcPath(String data, String srcPath) {
 		Collection<String> results = findUrlBySrcPath(data, srcPath);
 		if (!results.isEmpty()) {
@@ -190,11 +205,11 @@ public class GoComicsPlugin implements WikiPlugin {
 		}
 		return null;
 	}
-	
+
 	public Collection<String> findUrlBySrcPath(String data, String srcPath) {
 		String regex = "\"" + srcPath + ".*?\"";
 		Collection<String> results = findByRegex(data, regex);
-		Collection<String> newResults = new ArrayList<String>(); 
+		Collection<String> newResults = new ArrayList<String>();
 		for (String result : results) {
 			newResults.add(result.replace("\"", ""));
 		}
@@ -208,7 +223,7 @@ public class GoComicsPlugin implements WikiPlugin {
 		}
 		return null;
 	}
-	
+
 	public Collection<String> findByRegex(String data, String regex) {
 		String patternString = regex;
 		log.debug("patternString="+patternString);
@@ -252,7 +267,7 @@ public class GoComicsPlugin implements WikiPlugin {
 		}
 		return null;
 	}
-	
+
 	public static void main(String[] args) {
 		String url = "http://www.gocomics.com/garfield/2014/08/18";
 		String srcPath = "http://assets.amuniversal.com";

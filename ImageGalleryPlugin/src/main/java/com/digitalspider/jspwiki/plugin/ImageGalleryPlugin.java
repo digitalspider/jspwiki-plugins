@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2014 David Vittor http://digitalspider.com.au
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.digitalspider.jspwiki.plugin;
 
 import java.io.InputStream;
@@ -31,14 +46,14 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private static final Logger log = Logger.getLogger(ImageGalleryPlugin.class);
 
 	// [{ImageGallery url=http://web timeout=1 class=imgGal autoPlay=3000 items=4 lazy=true nav=true suffix=jpg prefix=owl sortby=date sortdesc=true}]
-	
+
 	public static final String REGEX_PLAINTEXT = "^[a-zA-Z0-9_+-]*";
 	public static final String REGEX_IMAGE = "src=(\"|')(https?://.*?\\.(?:png|jpg))(\"|')";
 	public static final String REGEX_URL = "^(https?|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
-		
+
 	private static final String RESOURCE_JSSOR_JS = "jssor/js/jssor.slider.min.js";
 	private static final String RESOURCE_JSSOR_CSS = "jssor/css/jssor.slider.css";
-	
+
 	private static final String PARAM_WIDTH = "width";
 	private static final String PARAM_HEIGHT = "height";
 	private static final String PARAM_STEPS = "steps";
@@ -55,7 +70,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private static final String PARAM_SORTDESC = "sortdesc";
 	private static final String PARAM_SUFFIX = "suffix";
 	private static final String PARAM_PREFIX = "prefix";
-	
+
 	private static final int DEFAULT_WIDTH = 1000;
 	private static final int DEFAULT_HEIGHT = 150;
 	private static final int DEFAULT_STEPS = 2;
@@ -73,9 +88,9 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private static final String DEFAULT_PREFIX = null;
 	private static final String DEFAULT_SORTBY = null;
 	private static final boolean DEFAULT_SORTDESC = false;
-	
+
 	private List<String> pageResources = new ArrayList<String>();
-	
+
 	private String sliderId = "slider"+System.identityHashCode(this);
 	private int width = DEFAULT_WIDTH;
 	private int height = DEFAULT_HEIGHT;
@@ -93,15 +108,15 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	private String prefix = DEFAULT_PREFIX;
 	private String sortBy = DEFAULT_SORTBY;
 	private boolean sortDesc = DEFAULT_SORTDESC;
-	
+
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		log.info("STARTED");
 		String result = "";
-		
+
 		// Validate all parameters
 		validateParams(wikiContext,params);
-		
+
 		log.info("url="+url+" autoPlay="+autoPlay+" items="+items+" suffix="+suffix+" prefix="+prefix);
 
 		List<String> imageUrls = new ArrayList<String>();
@@ -146,7 +161,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 				else if (sortBy != null && sortBy.equals("date")) {
 					// TODO: Not implemented
 				}
-				result = getText(wikiContext,imageUrls); 
+				result = getText(wikiContext,imageUrls);
 			}
 		} catch (Exception e) {
 			log.error(e,e);
@@ -160,7 +175,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 	protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		String paramName;
 		String param;
-		
+
 		log.info("validateParams() START");
 		paramName = PARAM_WIDTH;
 		param = params.get(paramName);
@@ -324,7 +339,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		}
 		log.info("validateParams() DONE");
 	}
-	
+
 	public void addUniqueTemplateResourceRequest(WikiContext wikiContext, String resourceType, String resourceName) {
 		String pageName = wikiContext.getPage().getName();
 		int pageVersion = wikiContext.getPage().getVersion();
@@ -334,7 +349,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 			pageResources.add(pageResource);
 		}
 	}
-	
+
 	public static String findFirstByRegex(String data, String regex) {
 		Collection<String> results = findByRegex(data, regex);
 		if (!results.isEmpty()) {
@@ -342,7 +357,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		}
 		return null;
 	}
-	
+
 	public static Collection<String> findImages(String data) {
 		Collection<String> results = findByRegex(data, REGEX_IMAGE);
 		Collection<String> newResults = new HashSet<String>();
@@ -370,7 +385,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		}
 		return results;
 	}
-	
+
 	public List<String> applyPrefixSuffix(List<String> imageUrls) throws Exception {
 		List<String> results = new ArrayList<String>();
 		boolean applyPrefix = StringUtils.isNotBlank(prefix) ? true : false;
@@ -412,7 +427,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		}
 		log.info("imageUrls.size() AFTER="+results.size());
 		return results;
-		
+
 	}
 
 	public String readConnection(String httpUrl, int timeout) throws Exception {
@@ -445,14 +460,14 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		return null;
 	}
 
-	
+
 	private String getText(WikiContext wikiContext, Collection<String> attachmentUrls) {
 		StringBuffer buf = new StringBuffer();
 		buf.append(getHtmlForScript());
 		buf.append(getHtmlForSlider(attachmentUrls));
 		return buf.toString();
 	}
-	
+
 	private String getHtmlForScript() {
 		StringBuffer template = new StringBuffer();
 		template.append(
@@ -476,7 +491,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		template.append(
 		"		};\n"+
 		"       var jssor_"+sliderId+" = new $JssorSlider$(containerId, options);\n"+
-	
+
 		"		function ScaleSlider() {\n"+
 		"			var bodyWidth = document.body.clientWidth;\n"+
 		"			if (bodyWidth)\n"+
@@ -494,7 +509,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		"</script>\n");
 		return template.toString();
 	}
-		
+
 	private String getHtmlForSlider(Collection<String> attachmentUrls) {
 		StringBuffer template = new StringBuffer();
 		template.append(
@@ -544,14 +559,14 @@ public class ImageGalleryPlugin implements WikiPlugin {
 			"</div> \n"+
 		    "<script src='owl-carousel/jquery-1.11.1.min.js'></script> \n"+
 		    "<script src='owl-carousel/owl.carousel.min.js'></script> \n"+
-		
+
 		    "<style> \n"+
 		    "//<![CDATA[\n"+
 		    "#image-gallery .item{ margin: 3px; } \n"+
 		    "#image-gallery .item img{ display: block; width: 100%; height: auto; } \n"+
 		    "//]]>\n"+
 		    "</style> \n"+
-		
+
 		    "<script> \n"+
 		    "//<![CDATA[\n"+
 		    "$(document).ready(function() { \n"+
@@ -571,7 +586,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		return template.toString();
 	}
 	*/
-	
+
 	private class ReverseComparator implements Comparator<String> {
 		@Override
 		public int compare(String o1, String o2) {
@@ -585,8 +600,8 @@ public class ImageGalleryPlugin implements WikiPlugin {
 		//String url = "http://www.lasoo.com.au/catalogues.html";
 		//String url = "http://www.smh.com.au";
 		try {
-			
-			
+
+
 			ImageGalleryPlugin plugin = new ImageGalleryPlugin();
 			System.out.println("url="+url);
 			url = findFirstByRegex(url, REGEX_URL);
@@ -614,7 +629,7 @@ public class ImageGalleryPlugin implements WikiPlugin {
 //			System.out.println(attUrls);
 //			attUrls = plugin.applyPrefixSuffix(attUrls);
 //			System.out.println(attUrls);
-			
+
 			//System.out.println(plugin.getText(attUrls));
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2014 David Vittor http://digitalspider.com.au
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.digitalspider.jspwiki.plugin;
 
 import java.io.BufferedReader;
@@ -40,7 +55,7 @@ import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientF
  * @author vittord
  */
 public class JiraPlugin implements WikiPlugin {
-	
+
 	private static final Logger log = Logger.getLogger(JiraPlugin.class);
 
 	public enum MetadataType {
@@ -55,7 +70,7 @@ public class JiraPlugin implements WikiPlugin {
 	public static final int DEFAULT_MAX = 10;
 	public static final int UPPERLIMIT_MAX = 50;
 	public static final int DEFAULT_START = 0;
-	
+
 	private static final String PROP_JIRA_BASEURL = "jira.baseurl";
 	private static final String PROP_JIRA_USERNAME = "jira.username";
 	private static final String PROP_JIRA_PASSWORD = "jira.password";
@@ -63,7 +78,7 @@ public class JiraPlugin implements WikiPlugin {
 	private static final String PARAM_JQL = "jql";
 	private static final String PARAM_MAX = "max";
 	private static final String PARAM_START = "start";
-	
+
 	private String jiraBaseUrl = DEFAULT_JIRA_BASEURL;
 	private String jiraUsername = DEFAULT_JIRA_USERNAME;
 	private String jiraPassword = DEFAULT_JIRA_PASSWORD;
@@ -73,19 +88,19 @@ public class JiraPlugin implements WikiPlugin {
 	private int start = DEFAULT_START;
 
 	private static Map<String,String> iconImageMapCache = new HashMap<String, String>();
-	
+
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		log.info("STARTED");
 		String result = "";
 		StringBuffer buffer = new StringBuffer();
-		
+
 		// Validate all parameters
 		validateParams(wikiContext,params);
-		
+
 		try {
 			JiraRestClient restClient = getRestClient(jiraBaseUrl,jiraUsername,jiraPassword);
-			
+
 			List<Issue> issues = doJQLSearch(restClient, project, max, start, jql);
 			if (!issues.isEmpty()) {
 				buffer.append("|| Key || Priority || Type || Summary || Status || Resolution || Assignee || Reporter || Comments");
@@ -108,14 +123,14 @@ public class JiraPlugin implements WikiPlugin {
 			log.error(e,e);
 			throw new PluginException("ERROR: "+e);
 		}
-		
+
 		return result;
 	}
 
 	protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		String paramName;
 		String param;
-		
+
 		log.info("validateParams() START");
 		paramName = PROP_JIRA_BASEURL;
 		param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
@@ -185,11 +200,11 @@ public class JiraPlugin implements WikiPlugin {
 		}
 		log.info("validateParams() DONE");
 	}
-	
+
 	public static JiraRestClient getRestClient(String url) throws URISyntaxException {
 		return getRestClient(url, null, null);
 	}
-	
+
 	public static JiraRestClient getRestClient(String url, String username, String password) throws URISyntaxException {
         final AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
         final URI jiraServerUri = new URI(url);
@@ -200,7 +215,7 @@ public class JiraPlugin implements WikiPlugin {
         final JiraRestClient restClient = factory.create(jiraServerUri, auth);
         return restClient;
 	}
-	
+
 	public static List<Issue> doJQLSearch(JiraRestClient restClient, String project, String jqlParam) {
 		return doJQLSearch(restClient, project, 10, 0, jqlParam);
 	}
@@ -222,7 +237,7 @@ public class JiraPlugin implements WikiPlugin {
         log.info("doJSQLSearch() found "+issues.size()+" issues");
 		return issues;
 	}
-	
+
 	public static String getIconUrl(JiraRestClient jiraRestClient, MetadataType type, URI uri) throws JSONException {
 		switch (type) {
 			case PRIORITY:
@@ -257,7 +272,7 @@ public class JiraPlugin implements WikiPlugin {
 		log.debug("result="+result);
 		return result;
 	}
-	
+
 	public static int countComments(Issue issue) {
 		int i = 0 ;
 		if (issue == null) {
@@ -270,7 +285,7 @@ public class JiraPlugin implements WikiPlugin {
 		log.debug("Found +"+i+" comments for issue "+issue.getKey());
 		return i;
 	}
-	
+
 	public static String getCachedIconUrl(JiraRestClient jiraRestClient,MetadataType type,URI url) throws JSONException {
 		if (iconImageMapCache.containsKey(url.toString())) {
 			return iconImageMapCache.get(url.toString());
