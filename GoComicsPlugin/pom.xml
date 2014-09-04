@@ -6,7 +6,7 @@
   <groupId>com.digitalspider.jspwiki.plugin</groupId>
   <artifactId>GoComicsPlugin</artifactId>
   <packaging>jar</packaging>
-  <version>0.1</version>
+  <version>0.2</version>
   <name>GoComics Plugin</name>
   <dependencies>
     <dependency>

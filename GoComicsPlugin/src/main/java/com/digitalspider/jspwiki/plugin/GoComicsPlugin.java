@@ -25,7 +25,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +45,17 @@ public class GoComicsPlugin implements WikiPlugin {
 	private static final String PROP_BASEURL = "gocomicplugin.baseurl";
 	private static final String PROP_SRCPATH = "gocomicplugin.srcpath";
 
+    private static final String[] COMIC_LIST= ("9chickweedlane adamathome andycapp arloandjanis baldo " +
+            "basicinstructions bc bignate brevity brewsterrockit broomhilda calvinandhobbes cathy closetohome " +
+            "culdesac darksideofthehorse dicktracy dilbert-classics dinosaur-comics doonesbury drabble " +
+            "duplex eric-the-circle fminus forbetterorforworse foxtrot frankandernest frazz garfield " +
+            "getfuzzy heartofthecity heavenly-nostrils herman inthebleachers jimsjournal jumpstart " +
+            "lacucaracha lastkiss lio luann marmaduke moderately-confused monty nancy nonsequitur offthemark " +
+            "overboard peanuts pearlsbeforeswine pibgorn pickles poochcafe realitycheck reallifeadventures " +
+            "redandrover richards-poor-almanac roseisrose savage-chickens scarygary shoe speedbump stonesoup " +
+            "tankmcnamara thatababy that-is-priceless theargylesweater the-born-loser theflyingmccoys " +
+            "thefuscobrothers thegrizzwells thekchronicles tomthedancingbug wizardofid working-daze wumo " +
+            "ziggy").split(" ");
 	private static final String PARAM_TIMEOUT = "timeout";
 	private static final String PARAM_DATE = "date";
 	private static final String PARAM_COMIC = "comic";
@@ -54,7 +67,7 @@ public class GoComicsPlugin implements WikiPlugin {
 	private static final int MAX_TIMEOUT = 120; // In seconds
 	private static final String DEFAULT_SRCPATH = "http://assets.amuniversal.com";
 	private static final String DEFAULT_BASEPATH = "http://www.gocomics.com/";
-	private static final String DEFAULT_COMIC = "garfield";
+	private static final String DEFAULT_COMIC = "random";
 	private static final String DEFAULT_CLASS = "comic";
 	private static final int DEFAULT_WIDTH = 600;
 	private static final int DEFAULT_HEIGHT = 200;
@@ -165,7 +178,10 @@ public class GoComicsPlugin implements WikiPlugin {
 			if (param != null) {
 				url = url.replace(DEFAULT_COMIC, param);
 			}
-		}
+        }
+        if (url.contains(DEFAULT_COMIC)) {
+            url = url.replace(DEFAULT_COMIC,getRandomComic());
+        }
 		paramName = PARAM_DATE;
 		param = params.get(paramName);
 		if (StringUtils.isNotBlank(param)) {
@@ -267,6 +283,13 @@ public class GoComicsPlugin implements WikiPlugin {
 		}
 		return null;
 	}
+
+    public String getRandomComic() {
+        Random rand = new Random();
+        int randomNumber = rand.nextInt(COMIC_LIST.length);
+        String comic = COMIC_LIST[randomNumber];
+        return comic;
+    }
 
 	public static void main(String[] args) {
 		String url = "http://www.gocomics.com/garfield/2014/08/18";
