@@ -14,4 +14,5 @@ cp $PLUGINSDIR/ImageGalleryPlugin/dist/*.jar $WEBLIBDIR/
 cp $PLUGINSDIR/VideoPlugin/dist/*.jar $WEBLIBDIR/
 cp $PLUGINSDIR/JiraPlugin/dist/*.jar $WEBLIBDIR/
 unzip -q -o $PLUGINSDIR/JiraPlugin/dist/*.zip -d $WEBLIBDIR/
+cp $PLUGINSDIR/PluginListPlugin/dist/*.jar $WEBLIBDIR/
 
