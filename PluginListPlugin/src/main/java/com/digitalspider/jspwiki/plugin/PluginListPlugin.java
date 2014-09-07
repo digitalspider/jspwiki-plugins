@@ -186,9 +186,12 @@ public class PluginListPlugin implements WikiPlugin {
             }
             else if (param.equalsIgnoreCase(ModuleType.EDITOR.name())) {
                 typeFilter = ModuleType.EDITOR;
+            }
+            else if (param.equalsIgnoreCase(ModuleType.ALL.name())) {
+                typeFilter = ModuleType.ALL;
             } else {
                 throw new PluginException(paramName + " parameter is not a valid type. " +
-                        "Should be plugin,filter, or editor. ");
+                        "Should be all,plugin,filter, or editor. ");
             }
         }
         paramName = PARAM_SHOWSTYLE;
