@@ -132,14 +132,14 @@ public class JDBCPlugin implements WikiPlugin {
 
             ResultSetMetaData md = rs.getMetaData();
             for (int i=0; i<md.getColumnCount(); i++) {
-                String header = md.getColumnLabel(i);
+                String header = md.getColumnLabel(i+1);
                 buffer.append("|| "+header);
             }
             buffer.append("\n");
 
             while (rs.next()) {
                 for (int i=0; i<md.getColumnCount(); i++) {
-                    String value = rs.getString(i);
+                    String value = rs.getString(i+1);
                     buffer.append("| "+value);
                 }
                 buffer.append("\n");
@@ -259,7 +259,7 @@ public class JDBCPlugin implements WikiPlugin {
             if (!sql.toLowerCase().startsWith("select")) {
                 throw new PluginException(paramName + " parameter needs to start with 'SELECT'.");
             }
-            className = param;
+            sql = param;
         }
     }
 
