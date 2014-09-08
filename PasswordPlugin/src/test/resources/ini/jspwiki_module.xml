@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+   <plugin class="com.digitalspider.jspwiki.plugin.PasswordPlugin">
+       <author>DigitalSpider</author>
+       <minVersion>2.10.1</minVersion>
+       <alias>Password</alias>
+   </plugin>
+</modules>
