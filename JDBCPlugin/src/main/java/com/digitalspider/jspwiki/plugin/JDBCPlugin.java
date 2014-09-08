@@ -15,37 +15,27 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.security.ProviderException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.PageManager;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.filters.PageFilter;
 import org.apache.wiki.api.plugin.WikiPlugin;
-import org.apache.wiki.modules.WikiModuleInfo;
 import org.apache.wiki.parser.JSPWikiMarkupParser;
 import org.apache.wiki.parser.WikiDocument;
-import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.render.XHTMLRenderer;
-import org.apache.wiki.util.comparators.JavaNaturalComparator;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
+import java.util.Map;
 
 public class JDBCPlugin implements WikiPlugin {
 
@@ -81,9 +71,11 @@ public class JDBCPlugin implements WikiPlugin {
     public static final String DEFAULT_URL = "";
     public static final String DEFAULT_USER = "";
     public static final String DEFAULT_PASSWORD = "";
-    public static final Integer DEFAULT_MAXRESULTS = 100;
+    public static final Integer DEFAULT_MAXRESULTS = 50;
     public static final String DEFAULT_CLASS = "sql-table";
     public static final String DEFAULT_SQL = "select 1";
+    public static final Boolean DEFAULT_HEADER = true;
+    public static final String DEFAULT_SOURCE = null;
 
     private static final String PROP_DRIVER = "jdbc.driver";
     private static final String PROP_URL = "jdbc.url";
@@ -92,6 +84,8 @@ public class JDBCPlugin implements WikiPlugin {
     private static final String PROP_MAXRESULTS = "jdbc.maxresults";
     private static final String PARAM_CLASS = "class";
     private static final String PARAM_SQL = "sql";
+    private static final String PARAM_HEADER = "header";
+    private static final String PARAM_SOURCE = "src";
 
     private SQLType sqlType = DEFAULT_TYPE;
     private String dbUrl = DEFAULT_URL;
@@ -100,8 +94,9 @@ public class JDBCPlugin implements WikiPlugin {
     private Integer maxResults = DEFAULT_MAXRESULTS;
     private String className = DEFAULT_CLASS;
     private String sql = DEFAULT_SQL;
+    private Boolean header = DEFAULT_HEADER;
+    private String source = DEFAULT_SOURCE;
 
-    private static final String DELIM = " | ";
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
         log.info("STARTED");
@@ -131,11 +126,13 @@ public class JDBCPlugin implements WikiPlugin {
             ResultSet rs = stmt.executeQuery(sql);
 
             ResultSetMetaData md = rs.getMetaData();
-            for (int i=0; i<md.getColumnCount(); i++) {
-                String header = md.getColumnLabel(i+1);
-                buffer.append("|| "+header);
+            if (header) {
+                for (int i = 0; i < md.getColumnCount(); i++) {
+                    String header = md.getColumnLabel(i + 1);
+                    buffer.append("|| " + header);
+                }
+                buffer.append("\n");
             }
-            buffer.append("\n");
 
             while (rs.next()) {
                 for (int i=0; i<md.getColumnCount(); i++) {
@@ -155,7 +152,7 @@ public class JDBCPlugin implements WikiPlugin {
 
             result = "<div class='"+className+"'>"+result+"</div>";
         } catch (Exception e) {
-            log.error(e,e);
+            log.error("ERROR. "+e.getMessage()+". sql="+sql,e);
             throw new PluginException(e.getMessage());
         }
 
@@ -167,7 +164,16 @@ public class JDBCPlugin implements WikiPlugin {
         String param;
 
         log.info("validateParams() START");
-        paramName = PROP_DRIVER;
+        paramName = PARAM_SOURCE;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            source = param;
+        }
+        paramName = getPropKey(PROP_DRIVER, source);
         param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -199,7 +205,7 @@ public class JDBCPlugin implements WikiPlugin {
             log.error("jspwiki-custom.properties has not been configured for "+paramName+"!");
             throw new PluginException("jspwiki-custom.properties has not been configured for "+paramName+"!");
         }
-        paramName = PROP_URL;
+        paramName = getPropKey(PROP_URL, source);
         param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -212,7 +218,7 @@ public class JDBCPlugin implements WikiPlugin {
             }
             dbUrl = param;
         }
-        paramName = PROP_USER;
+        paramName = getPropKey(PROP_USER,source);
         param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -221,7 +227,7 @@ public class JDBCPlugin implements WikiPlugin {
             }
             dbUser = param;
         }
-        paramName = PROP_PASSWORD;
+        paramName = getPropKey(PROP_PASSWORD,source);
         param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -230,7 +236,7 @@ public class JDBCPlugin implements WikiPlugin {
             }
             dbPassword = param;
         }
-        paramName = PROP_MAXRESULTS;
+        paramName = getPropKey(PROP_MAXRESULTS,source);
         param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -239,7 +245,6 @@ public class JDBCPlugin implements WikiPlugin {
             }
             maxResults = Integer.parseInt(param);
         }
-
         paramName = PARAM_CLASS;
         param = params.get(paramName);
         if (StringUtils.isNotBlank(param)) {
@@ -261,6 +266,16 @@ public class JDBCPlugin implements WikiPlugin {
             }
             sql = param;
         }
+        paramName = PARAM_HEADER;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!param.equalsIgnoreCase("true") && !param.equalsIgnoreCase("false")
+                    && !param.equals("0") && !param.equals("1")) {
+                throw new PluginException(paramName + " parameter is not a valid boolean");
+            }
+            header = Boolean.parseBoolean(param);
+        }
     }
 
     private String addLimits(SQLType sqlType, String sql, Integer maxResults) {
@@ -277,7 +292,7 @@ public class JDBCPlugin implements WikiPlugin {
                     result = sql.replace("select","select top "+maxResults);
                     break;
                 case POSTGRESQL:
-                    result = sql.replace("select","select top "+maxResults);
+                    result = sql+" limit "+maxResults;
                     break;
                 case DB2:
                     result = sql.replace("select","select top "+maxResults);
@@ -286,6 +301,14 @@ public class JDBCPlugin implements WikiPlugin {
                     result = sql.replace("select","select top "+maxResults);
                     break;
             }
+        }
+        return result;
+    }
+
+    private String getPropKey(String currentKey, String source) {
+        String result = currentKey;
+        if (StringUtils.isNotBlank(source)) {
+            result+="."+source;
         }
         return result;
     }
