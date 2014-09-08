@@ -47,8 +47,6 @@ import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.render.XHTMLRenderer;
 import org.apache.wiki.util.comparators.JavaNaturalComparator;
 
-import sun.security.pkcs11.Secmod;
-
 public class JDBCPlugin implements WikiPlugin {
 
 	private final Logger log = Logger.getLogger(JDBCPlugin.class);
@@ -208,7 +206,7 @@ public class JDBCPlugin implements WikiPlugin {
             if (!StringUtils.isAsciiPrintable(param)) {
                 throw new PluginException(paramName + " property is not a valid value");
             }
-            if (param.startsWith(sqlType.startsWith)) {
+            if (!param.trim().startsWith(sqlType.startsWith)) {
                 throw new PluginException("Error: "+paramName+" property has value "+param+". "+
                     "Expected: "+sqlType.urlDefaultPath);
             }
