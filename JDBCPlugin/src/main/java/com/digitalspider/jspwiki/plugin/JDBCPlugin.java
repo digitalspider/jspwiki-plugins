@@ -283,15 +283,19 @@ public class JDBCPlugin implements WikiPlugin {
         if (StringUtils.isNotBlank(sql)) {
             switch (sqlType) {
                 case MSSQL:
+                    // TODO: Check if top already exists
                     result = sql.replace("select","select top "+maxResults);
                     break;
                 case MYSQL:
+                    // TODO: Check if limit already exists
                     result = sql+" limit "+maxResults;
                     break;
                 case ORACLE:
+                    // TODO: change to use rownum
                     result = sql.replace("select","select top "+maxResults);
                     break;
                 case POSTGRESQL:
+                    // TODO: Check if limit already exists
                     result = sql+" limit "+maxResults;
                     break;
                 case DB2:

@@ -198,7 +198,8 @@ public class PluginListPlugin implements WikiPlugin {
         param = params.get(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
-            if (!param.equalsIgnoreCase("true") && !param.equalsIgnoreCase("false")) {
+            if (!param.equalsIgnoreCase("true") && !param.equalsIgnoreCase("false")
+                    && !param.equals("0") && !param.equals("1")) {
                 throw new PluginException(paramName + " parameter is not a valid boolean");
             }
             showStyle = Boolean.parseBoolean(param);
