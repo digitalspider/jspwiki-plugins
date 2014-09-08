@@ -24,16 +24,29 @@ import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 
 import java.util.Map;
+import java.util.UUID;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 public class PasswordPlugin implements WikiPlugin {
 
-	private final Logger log = Logger.getLogger(PasswordPlugin.class);
+	private static final Logger log = Logger.getLogger(PasswordPlugin.class);
 
     private static final String DEFAULT_ID = null;
+    private static final String DEFAULT_PASSWORD = null;
+    private static final Integer DEFAULT_LEVEL = 1;
 
     private static final String PARAM_ID = "id";
+    private static final String PARAM_PASSWORD = "p";
+    private static final String PARAM_LEVEL = "l";
 
     private String id = DEFAULT_ID;
+    private String password = DEFAULT_PASSWORD;
+    private Integer level = DEFAULT_LEVEL;
 
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
@@ -80,5 +93,60 @@ public class PasswordPlugin implements WikiPlugin {
             result+="."+source;
         }
         return result;
+    }
+
+    private static Cipher getCipher(char[] key, int mode) throws PluginException {
+        // TODO: Document - http://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html
+        try {
+            String transformation = "PBEWithMD5AndDES";
+            byte[] salt = "protects".substring(0,8).getBytes();
+            int count = 20;
+
+            // Create PBE parameter set
+            PBEParameterSpec pbeParamSpec = new PBEParameterSpec(salt, count);
+            PBEKeySpec pbeKeySpec = new PBEKeySpec(key);
+            SecretKeyFactory keyFac = SecretKeyFactory.getInstance(transformation);
+            SecretKey pbeKey = keyFac.generateSecret(pbeKeySpec);
+
+            Cipher pbeCipher = Cipher.getInstance(transformation);
+            pbeCipher.init(mode, pbeKey, pbeParamSpec);
+            return pbeCipher;
+        } catch (Exception e) {
+            log.error(e,e);
+            throw new PluginException("Error encrypting password. "+e.getMessage());
+        }
+    }
+
+    public static byte[] encrypt(char[] key, byte[] content) throws PluginException {
+        try {
+            Cipher pbeCipher = getCipher(key, Cipher.ENCRYPT_MODE);
+            return pbeCipher.doFinal(content);
+        } catch (Exception e) {
+            log.error(e,e);
+            throw new PluginException("Error encrypting password. "+e.getMessage());
+        }
+    }
+
+    public static byte[] decrypt(char[] key, byte[] content) throws PluginException {
+        try {
+            Cipher pbeCipher = getCipher(key, Cipher.DECRYPT_MODE);
+            return pbeCipher.doFinal(content);
+        } catch (Exception e) {
+            log.error(e,e);
+            throw new PluginException("Error decrypting password. "+e.getMessage());
+        }
+    }
+
+    public static Integer getPasswordID(Integer level) throws PluginException {
+        if (level>9) {
+            throw new PluginException("Level greater than 9 is unsupported");
+        }
+        if (level<1) {
+            throw new PluginException("Level less than 1 is invalid");
+        }
+        UUID uuid = UUID.randomUUID();
+        String id = uuid.toString().replaceAll("[a-zA-Z]|-","").substring(0,5);
+        id = id.substring(0,2)+level+id.substring(2);
+        return Integer.parseInt(id);
     }
 }

@@ -37,12 +37,34 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.util.Map;
+import java.util.UUID;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 public class PasswordPluginTest extends TestCase {
 
 	private final Logger log = Logger.getLogger(PasswordPluginTest.class);
 
-    public void testEncrption() {
+    public void testEncrption() throws Exception {
+        char[] key = "pwd".toCharArray();
+
+        String content = "This is another example";
+        byte[] encrypted = PasswordPlugin.encrypt(key,content.getBytes());
+        System.out.println("encrypted="+encrypted);
+        System.out.println("encrypted="+new String(encrypted));
+
+        byte[] cleartext = PasswordPlugin.decrypt(key, encrypted);
+        System.out.println("decrypted="+new String(cleartext));
+        assertEquals(content,new String(cleartext));
+
+        int level = 3;
+        Integer uuid = PasswordPlugin.getPasswordID(level);
+        System.out.println("uuid="+uuid);
+        assertEquals(level,(uuid%10000)/1000);
 
     }
 }
