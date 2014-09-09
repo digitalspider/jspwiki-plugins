@@ -15,6 +15,7 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.PageManager;
@@ -120,7 +121,9 @@ public class PasswordPlugin implements WikiPlugin {
     public static byte[] encrypt(char[] key, byte[] content) throws PluginException {
         try {
             Cipher pbeCipher = getCipher(key, Cipher.ENCRYPT_MODE);
-            return pbeCipher.doFinal(content);
+            byte[] encrypted = pbeCipher.doFinal(content);
+            encrypted = Base64.encodeBase64(encrypted);
+            return encrypted;
         } catch (Exception e) {
             log.error(e,e);
             throw new PluginException("Error encrypting password. "+e.getMessage());
@@ -130,7 +133,9 @@ public class PasswordPlugin implements WikiPlugin {
     public static byte[] decrypt(char[] key, byte[] content) throws PluginException {
         try {
             Cipher pbeCipher = getCipher(key, Cipher.DECRYPT_MODE);
-            return pbeCipher.doFinal(content);
+            content = Base64.decodeBase64(content);
+            content = pbeCipher.doFinal(content);
+            return content;
         } catch (Exception e) {
             log.error(e,e);
             throw new PluginException("Error decrypting password. "+e.getMessage());
