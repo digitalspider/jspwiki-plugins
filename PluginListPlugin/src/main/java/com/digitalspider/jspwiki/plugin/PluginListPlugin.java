@@ -15,18 +15,6 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.security.ProviderException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.PageManager;
@@ -40,7 +28,17 @@ import org.apache.wiki.parser.JSPWikiMarkupParser;
 import org.apache.wiki.parser.WikiDocument;
 import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.render.XHTMLRenderer;
-import org.apache.wiki.util.comparators.JavaNaturalComparator;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 public class PluginListPlugin implements WikiPlugin {
 
@@ -106,7 +104,10 @@ public class PluginListPlugin implements WikiPlugin {
                 }
             }
             if (typeFilter == ModuleType.ALL || typeFilter == ModuleType.FILTER) {
-                for (PageFilter filter : filterModules) {
+                List<PageFilter> filterModuleList = new ArrayList<PageFilter>();
+                filterModuleList.addAll(filterModules);
+                Collections.sort(filterModuleList,new PageFilterComparator());
+                for (PageFilter filter : filterModuleList) {
                     String name = filter.getClass().getSimpleName();
                     buffer.append("| Filter" + DELIM + getNameLinked(pageManager, name) +
                             DELIM + getClassNameLinked(filter.getClass().getName()) + DELIM + "" +
@@ -261,4 +262,9 @@ public class PluginListPlugin implements WikiPlugin {
         }
     }
 
+    public class PageFilterComparator implements Comparator<PageFilter> {
+        public int compare(PageFilter pf1, PageFilter pf2) {
+            return pf1.getClass().getSimpleName().compareTo(pf2.getClass().getSimpleName());
+        }
+    }
 }
