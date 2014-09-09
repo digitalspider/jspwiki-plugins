@@ -17,34 +17,7 @@ package com.digitalspider.jspwiki.plugin;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.wiki.PageManager;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.parser.JSPWikiMarkupParser;
-import org.apache.wiki.parser.WikiDocument;
-import org.apache.wiki.render.XHTMLRenderer;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 public class PasswordPluginTest extends TestCase {
 
@@ -62,10 +35,47 @@ public class PasswordPluginTest extends TestCase {
         System.out.println("decrypted="+new String(cleartext));
         assertEquals(content,new String(cleartext));
 
-        int level = 3;
-        Integer uuid = PasswordPlugin.getPasswordID(level);
-        System.out.println("uuid="+uuid);
-        assertEquals(level,(uuid%10000)/1000);
+        Integer level = 3;
+        Integer passwordId = PasswordPlugin.getPasswordID(level);
+        System.out.println("passwordId="+passwordId);
+        assertEquals(level,PasswordPlugin.getPasswordLevel(passwordId));
 
+    }
+
+    public void testSecrets() throws Exception {
+        String plain = "This is my secret";
+        Integer pid1 = PasswordPlugin.doLock("1",plain.getBytes(),"david","daniela","vittor");
+        System.out.println("pid1="+pid1);
+        // level1 unlock
+        assertEquals(plain,PasswordPlugin.doUnlock(pid1,"david"));
+        assertEquals(plain,PasswordPlugin.doUnlock(pid1,"david","daniela","vittor"));
+        assertEquals(plain,PasswordPlugin.doUnlock(pid1,"david","daxniela","vittor"));
+        assertNull(PasswordPlugin.doUnlock(pid1,"daxvid","daniela","vittor"));
+
+        Integer pid2 = PasswordPlugin.doLock("2",plain.getBytes(),"david","daniela","vittor");
+        System.out.println("pid2="+pid2);
+        assertNotSame(plain,pid2);
+        assertNotSame(pid1,pid2);
+        // level2 unlock
+        assertNull(PasswordPlugin.doUnlock(pid2, "david"));
+        assertEquals(plain,PasswordPlugin.doUnlock(pid2,"david","daniela","vittor"));
+        assertNull(PasswordPlugin.doUnlock(pid2, "daxvid", "daniela", "vittor"));
+        assertNull(PasswordPlugin.doUnlock(pid2, "david", "danxiela", "vittor"));
+        assertEquals(plain,PasswordPlugin.doUnlock(pid2,"david","daniela","vitxtor"));
+
+        Integer pid3 = PasswordPlugin.doLock("3",plain.getBytes(),"david","daniela","vittor");
+        System.out.println("pid3="+pid3);
+        assertNotSame(plain,pid3);
+        assertNotSame(pid1,pid3);
+        assertNotSame(pid2,pid3);
+        // level3 unlock
+        assertNull(PasswordPlugin.doUnlock(pid3, "david"));
+        assertNull(PasswordPlugin.doUnlock(pid3, "david", "daniela"));
+        assertEquals(plain, PasswordPlugin.doUnlock(pid3, "david", "daniela", "vittor"));
+        assertNull(PasswordPlugin.doUnlock(pid3, "daxvid", "daniela", "vittor"));
+        assertNull(PasswordPlugin.doUnlock(pid3, "david", "danxiela", "vittor"));
+        assertNull(PasswordPlugin.doUnlock(pid3, "david", "daniela", "vitxtor"));
+        assertNull(PasswordPlugin.doUnlock(pid3,"david","daniela","vitxtor","test"));
+        assertEquals(plain, PasswordPlugin.doUnlock(pid3, "david", "daniela", "vittor", "texst"));
     }
 }

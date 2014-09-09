@@ -24,7 +24,9 @@ import org.apache.wiki.WikiEngine;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
 import javax.crypto.Cipher;
@@ -37,16 +39,19 @@ public class PasswordPlugin implements WikiPlugin {
 
 	private static final Logger log = Logger.getLogger(PasswordPlugin.class);
 
-    private static final String DEFAULT_ID = null;
-    private static final String DEFAULT_PASSWORD = null;
+    private static final Integer DEFAULT_ID = null;
+    private static final byte[] DEFAULT_SECRET = new byte[0];
     private static final Integer DEFAULT_LEVEL = 1;
 
     private static final String PARAM_ID = "id";
-    private static final String PARAM_PASSWORD = "p";
-    private static final String PARAM_LEVEL = "l";
+    private static final String PARAM_SECRET = "secret";
+    private static final String PARAM_LEVEL = "level";
 
-    private String id = DEFAULT_ID;
-    private String password = DEFAULT_PASSWORD;
+    private static final String KEY_PREFIX = "password.key.";
+    private static Map<Integer,byte[]> cache = new HashMap<Integer, byte[]>();
+
+    private Integer id = DEFAULT_ID;
+    private byte[] secret = DEFAULT_SECRET;
     private Integer level = DEFAULT_LEVEL;
 
 	@Override
@@ -61,9 +66,14 @@ public class PasswordPlugin implements WikiPlugin {
         WikiEngine engine = wikiContext.getEngine();
         PageManager pageManager = engine.getPageManager();
         String baseUrl = engine.getBaseURL();
+        Properties properties = engine.getWikiProperties();
 
         try {
-
+            if (id == null) {
+                id = doLock(level.toString(),secret,properties);
+                params.put(PARAM_ID,id.toString());
+            }
+            result = "<div class='password'>"+id+"</div>";
         } catch (Exception e) {
             log.error(e,e);
             throw new PluginException(e.getMessage());
@@ -81,10 +91,31 @@ public class PasswordPlugin implements WikiPlugin {
         param = params.get(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
+            if (!StringUtils.isNumeric(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            id = Integer.parseInt(param);
+        }
+        paramName = PARAM_SECRET;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
             if (!StringUtils.isAsciiPrintable(param)) {
                 throw new PluginException(paramName + " parameter is not a valid value");
             }
-            id = param;
+            secret = param.getBytes();
+        }
+        paramName = PARAM_LEVEL;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isNumeric(param)) {
+                throw new PluginException(paramName + " parameter is not a valid number");
+            }
+            level = Integer.parseInt(param);
+            if (level<1 || level>9) {
+                throw new PluginException(paramName +" value "+param+" cannot be less than 0 or more than 9");
+            }
         }
     }
 
@@ -153,5 +184,72 @@ public class PasswordPlugin implements WikiPlugin {
         String id = uuid.toString().replaceAll("[a-zA-Z]|-","").substring(0,5);
         id = id.substring(0,2)+level+id.substring(2);
         return Integer.parseInt(id);
+    }
+
+    public static Properties getUnlockProperties(String... params) {
+        Properties properties = new Properties();
+        int i = 1;
+        for (String param : params) {
+            properties.put(KEY_PREFIX+i, param);
+            i++;
+        }
+        return properties;
+    }
+
+    public static char[] getDecryptKey(Integer level, Properties properties) {
+        StringBuffer buffer = new StringBuffer();
+        for (int i=1; i<=level; i++) {
+
+            buffer.append(properties.getProperty(KEY_PREFIX + i));
+        }
+        return buffer.toString().toCharArray();
+    }
+
+    /**
+     * Calculate the number of passwords required to unlock this password
+     * @param passwordId the id of the password required
+     * @return the number of passwords required
+     */
+    public static Integer getPasswordLevel(Integer passwordId) {
+        Integer level = (passwordId%10000)/1000;
+        return level;
+    }
+
+    public static String doUnlock(Integer passwordId, String... params) {
+        return doUnlock(passwordId,getUnlockProperties(params));
+    }
+    public static Integer doLock(String levelParam, byte[] plain, String... params) {
+        return doLock(levelParam,plain,getUnlockProperties(params));
+    }
+    /**
+     * Main method to unlock a secret
+     * @param passwordId which password do you want to unlock
+     * @param params provide the passwords to unlock the secret
+     * @return the unlocked secret, or null if failed
+     */
+    public static String doUnlock(Integer passwordId, Properties params) {
+        try {
+            Integer level = getPasswordLevel(passwordId);
+            char[] unlockKey = getDecryptKey(level, params);
+            byte[] result = decrypt(unlockKey, cache.get(passwordId));
+            return new String(result);
+        } catch (Exception e) {
+            log.error("Could not decrypt the password",e);
+        }
+        return null;
+    }
+
+    public static Integer doLock(String levelParam, byte[] plain, Properties params) {
+        try {
+            Integer level = Integer.parseInt(levelParam);
+            char[] unlockKey = getDecryptKey(level, params);
+            byte[] result = encrypt(unlockKey, plain);
+            Integer passwordId = getPasswordID(level);
+            cache.put(passwordId,result);
+            return passwordId;
+        } catch (Exception e) {
+            log.error("Could not encrypt the password",e);
+        }
+        return -1;
     }
 }
