@@ -17,6 +17,7 @@ package com.digitalspider.jspwiki.plugin;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.PageManager;
