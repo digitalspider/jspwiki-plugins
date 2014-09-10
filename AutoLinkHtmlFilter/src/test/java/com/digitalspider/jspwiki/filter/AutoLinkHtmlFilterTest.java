@@ -22,32 +22,38 @@ import java.util.Collection;
 public class AutoLinkHtmlFilterTest extends TestCase {
 
     public void testFindURL() {
-        String content = "This is a http://www.google.com link to a page on [http://digitalspider.com.au] and http://test/abc.com?abc='21'";
+        String content = "This is a http://www.google.com link to a page on [http://digitalspider.com.au] and http://test/abc.com?abc='21'" +
+                " in other news [prelinked|http://prelinked.com] values should not autolink.";
 
         Collection<String> htmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML);
 //        System.out.println("htmlStrings="+htmlStrings);
-        assertEquals(3, htmlStrings.size());
+        assertEquals(4, htmlStrings.size());
         assertTrue(htmlStrings.contains("http://www.google.com"));
         assertTrue(htmlStrings.contains("http://digitalspider.com.au"));
         assertTrue(htmlStrings.contains("http://test/abc.com?abc='21'"));
+        assertTrue(htmlStrings.contains("http://prelinked.com"));
 
         Collection<String> linkedHtmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.LINKED_REGEX_HTML);
 //        System.out.println("linkedHtmlStrings="+linkedHtmlStrings);
-        assertEquals(1,linkedHtmlStrings.size());
+        assertEquals(2,linkedHtmlStrings.size());
         assertTrue(linkedHtmlStrings.contains("[http://digitalspider.com.au]"));
+        assertTrue(linkedHtmlStrings.contains("|http://prelinked.com]"));
         linkedHtmlStrings = AutoLinkHtmlFilter.getUnlinkedCollection(linkedHtmlStrings);
         assertTrue(linkedHtmlStrings.contains("http://digitalspider.com.au"));
+        assertTrue(linkedHtmlStrings.contains("http://prelinked.com"));
 
         htmlStrings = AutoLinkHtmlFilter.removeAll(htmlStrings, linkedHtmlStrings);
         assertEquals(2,htmlStrings.size());
+        assertTrue(htmlStrings.contains("http://www.google.com"));
+        assertTrue(htmlStrings.contains("http://test/abc.com?abc='21'"));
 
         for (String link: htmlStrings) {
             content = content.replace(link,"["+link+"]");
         }
 
         htmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML);
-        assertEquals(3, htmlStrings.size());
+        assertEquals(4, htmlStrings.size());
         linkedHtmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.LINKED_REGEX_HTML);
-        assertEquals(3,linkedHtmlStrings.size());
+        assertEquals(4,linkedHtmlStrings.size());
     }
 }

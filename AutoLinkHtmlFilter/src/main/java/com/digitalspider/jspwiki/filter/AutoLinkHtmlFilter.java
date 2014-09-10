@@ -50,7 +50,7 @@ public class AutoLinkHtmlFilter extends BasicPageFilter {
 	private static final Logger log = Logger.getLogger(AutoLinkHtmlFilter.class);
 
     public static final String REGEX_HTML = "(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]";
-    public static final String LINKED_REGEX_HTML = "\\[(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
+    public static final String LINKED_REGEX_HTML = "(\\||\\[)(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
 
     @Override
     public String preSave(WikiContext wikiContext, String content) throws FilterException {
