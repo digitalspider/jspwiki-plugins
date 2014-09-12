@@ -25,10 +25,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.parser.JSPWikiMarkupParser;
@@ -70,6 +74,7 @@ public class JiraPlugin implements WikiPlugin {
 	public static final int DEFAULT_MAX = 10;
 	public static final int UPPERLIMIT_MAX = 50;
 	public static final int DEFAULT_START = 0;
+    public static final String DEFAULT_CLASS = "jira-table";
 
 	private static final String PROP_JIRA_BASEURL = "jira.baseurl";
 	private static final String PROP_JIRA_USERNAME = "jira.username";
@@ -78,6 +83,7 @@ public class JiraPlugin implements WikiPlugin {
 	private static final String PARAM_JQL = "jql";
 	private static final String PARAM_MAX = "max";
 	private static final String PARAM_START = "start";
+    private static final String PARAM_CLASS = "class";
 
 	private String jiraBaseUrl = DEFAULT_JIRA_BASEURL;
 	private String jiraUsername = DEFAULT_JIRA_USERNAME;
@@ -86,17 +92,21 @@ public class JiraPlugin implements WikiPlugin {
 	private String jql = DEFAULT_JQL;
 	private int max = DEFAULT_MAX;
 	private int start = DEFAULT_START;
+    private String className = DEFAULT_CLASS;
 
 	private static Map<String,String> iconImageMapCache = new HashMap<String, String>();
 
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+        setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
 		log.info("STARTED");
 		String result = "";
 		StringBuffer buffer = new StringBuffer();
+        WikiEngine engine = wikiContext.getEngine();
+        Properties props = engine.getWikiProperties();
 
 		// Validate all parameters
-		validateParams(wikiContext,params);
+		validateParams(props,params);
 
 		try {
 			JiraRestClient restClient = getRestClient(jiraBaseUrl,jiraUsername,jiraPassword);
@@ -105,35 +115,30 @@ public class JiraPlugin implements WikiPlugin {
 			if (!issues.isEmpty()) {
 				buffer.append("|| Key || Priority || Type || Summary || Status || Resolution || Assignee || Reporter || Comments");
 				buffer.append("\n");
-//				buffer.append("<br/>");
 			}
 			for (Issue issue : issues) {
 				buffer.append(getIssueAsWikiText(restClient,jiraBaseUrl,issue));
 				buffer.append("\n");
-//				buffer.append("<br/>");
 			}
-			Reader in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buffer.toString().getBytes())));
-			JSPWikiMarkupParser parser = new JSPWikiMarkupParser(wikiContext, in);
-			WikiDocument doc = parser.parse();
-			log.debug("doc="+doc);
-			XHTMLRenderer renderer = new XHTMLRenderer(wikiContext, doc);
-			result = renderer.getString();
-			//result += "<br/><br/>"+buffer.toString();
+            log.info("result="+result);
+            result = engine.textToHTML(wikiContext,buffer.toString());
+
+            result = "<div class='"+className+"'>"+result+"</div>";
 		} catch (Throwable e) {
-			log.error(e,e);
-			throw new PluginException("ERROR: "+e);
+			log.error("ERROR: "+e.getMessage()+". jql="+jql,e);
+			throw new PluginException(e.getMessage());
 		}
 
 		return result;
 	}
 
-	protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+	protected void validateParams(Properties props, Map<String, String> params) throws PluginException {
 		String paramName;
 		String param;
 
 		log.info("validateParams() START");
 		paramName = PROP_JIRA_BASEURL;
-		param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+		param = props.getProperty(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
 			if (!StringUtils.isAsciiPrintable(param)) {
@@ -142,7 +147,7 @@ public class JiraPlugin implements WikiPlugin {
 			jiraBaseUrl = param;
 		}
 		paramName = PROP_JIRA_USERNAME;
-		param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+		param = props.getProperty(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
 			if (!StringUtils.isAsciiPrintable(param)) {
@@ -151,7 +156,7 @@ public class JiraPlugin implements WikiPlugin {
 			jiraUsername = param;
 		}
 		paramName = PROP_JIRA_PASSWORD;
-		param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+		param = props.getProperty(paramName);
 		if (StringUtils.isNotBlank(param)) {
 			log.info(paramName+"="+param);
 			if (!StringUtils.isAsciiPrintable(param)) {
@@ -198,6 +203,15 @@ public class JiraPlugin implements WikiPlugin {
 			}
 			start = Integer.parseInt(param);
 		}
+        paramName = PARAM_CLASS;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            className = param;
+        }
 		log.info("validateParams() DONE");
 	}
 
@@ -258,7 +272,6 @@ public class JiraPlugin implements WikiPlugin {
 			return "";
 		}
 		String DELIM = " | ";
-//		String link = "<a href='"+jiraBaseUrl+"/browse/"+issue.getKey()+"'>"+issue.getKey()+"</a>";
 		String link = "["+issue.getKey()+"|"+jiraBaseUrl+"/browse/"+issue.getKey()+"]";
 		String priority = issue.getPriority() == null ? "" : "["+ getCachedIconUrl(jiraRestClient,MetadataType.PRIORITY,issue.getPriority().getSelf()) + "]";
 		String status = issue.getStatus() == null ? "" : "["+ getCachedIconUrl(jiraRestClient,MetadataType.PRIORITY,issue.getStatus().getSelf()) + "]";
@@ -296,4 +309,10 @@ public class JiraPlugin implements WikiPlugin {
 		}
 		return iconUrl;
 	}
+
+    private void setLogForDebug(String value) {
+        if (StringUtils.isNotBlank(value) && (value.equalsIgnoreCase("true") || value.equals("1"))) {
+            log.setLevel(Level.INFO);
+        }
+    }
 }

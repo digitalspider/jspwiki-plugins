@@ -40,6 +40,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -113,13 +114,11 @@ public class JDBCPlugin implements WikiPlugin {
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
+        WikiEngine engine = wikiContext.getEngine();
+        Properties props = engine.getWikiProperties();
 
         // Validate all parameters
-        validateParams(wikiContext, params);
-
-        WikiEngine engine = wikiContext.getEngine();
-        PageManager pageManager = engine.getPageManager();
-        String baseUrl = engine.getBaseURL();
+        validateParams(props, params);
 
         Connection conn = null;
         try {
@@ -178,7 +177,7 @@ public class JDBCPlugin implements WikiPlugin {
 		return result;
 	}
 
-    protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+    protected void validateParams(Properties props, Map<String, String> params) throws PluginException {
         String paramName;
         String param;
 
@@ -193,7 +192,7 @@ public class JDBCPlugin implements WikiPlugin {
             source = param;
         }
         paramName = getPropKey(PROP_DRIVER, source);
-        param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+        param = props.getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
             try {
@@ -231,7 +230,7 @@ public class JDBCPlugin implements WikiPlugin {
         }
         if (ds == null) {
             paramName = getPropKey(PROP_URL, source);
-            param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+            param = props.getProperty(paramName);
             if (StringUtils.isNotBlank(param)) {
                 log.info(paramName + "=" + param);
                 if (!StringUtils.isAsciiPrintable(param)) {
@@ -244,7 +243,7 @@ public class JDBCPlugin implements WikiPlugin {
                 dbUrl = param;
             }
             paramName = getPropKey(PROP_USER, source);
-            param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+            param = props.getProperty(paramName);
             if (StringUtils.isNotBlank(param)) {
                 log.info(paramName + "=" + param);
                 if (!StringUtils.isAsciiPrintable(param)) {
@@ -253,7 +252,7 @@ public class JDBCPlugin implements WikiPlugin {
                 dbUser = param;
             }
             paramName = getPropKey(PROP_PASSWORD, source);
-            param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+            param = props.getProperty(paramName);
             if (StringUtils.isNotBlank(param)) {
                 log.info(paramName + "=" + param);
                 if (!StringUtils.isAsciiPrintable(param)) {
@@ -263,7 +262,7 @@ public class JDBCPlugin implements WikiPlugin {
             }
         }
         paramName = getPropKey(PROP_MAXRESULTS,source);
-        param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+        param = props.getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
             if (!StringUtils.isNumeric(param)) {
