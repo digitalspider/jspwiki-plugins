@@ -16,10 +16,12 @@
 package com.digitalspider.jspwiki.plugin;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.wiki.PageManager;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.filters.PageFilter;
 import org.apache.wiki.api.plugin.WikiPlugin;
@@ -39,6 +41,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class PluginListPlugin implements WikiPlugin {
 
@@ -63,14 +66,16 @@ public class PluginListPlugin implements WikiPlugin {
     private static final String DELIM = " | ";
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+        setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
+        WikiEngine engine = wikiContext.getEngine();
+        Properties props = engine.getWikiProperties();
 
         // Validate all parameters
-        validateParams(wikiContext, params);
+        validateParams(props, params);
 
-        WikiEngine engine = wikiContext.getEngine();
         PageManager pageManager = engine.getPageManager();
         Collection<DefaultPluginManager.WikiPluginInfo> pluginModules = engine.getPluginManager().modules();
         Collection<PageFilter> filterModules = engine.getFilterManager().modules();
@@ -141,12 +146,7 @@ public class PluginListPlugin implements WikiPlugin {
             }
 
             log.info("result="+buffer.toString());
-            Reader in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buffer.toString().getBytes())));
-            JSPWikiMarkupParser parser = new JSPWikiMarkupParser(wikiContext, in);
-            WikiDocument doc = parser.parse();
-            log.debug("doc=" + doc);
-            XHTMLRenderer renderer = new XHTMLRenderer(wikiContext, doc);
-            result = renderer.getString();
+            result = engine.textToHTML(wikiContext,buffer.toString());
 
             result = "<div class='"+className+"'>"+result+"</div>";
         } catch (Exception e) {
@@ -158,7 +158,7 @@ public class PluginListPlugin implements WikiPlugin {
 		return result;
 	}
 
-    protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+    protected void validateParams(Properties props, Map<String, String> params) throws PluginException {
         String paramName;
         String param;
 
@@ -265,6 +265,13 @@ public class PluginListPlugin implements WikiPlugin {
     public class PageFilterComparator implements Comparator<PageFilter> {
         public int compare(PageFilter pf1, PageFilter pf2) {
             return pf1.getClass().getSimpleName().compareTo(pf2.getClass().getSimpleName());
+        }
+    }
+
+
+    private void setLogForDebug(String value) {
+        if (StringUtils.isNotBlank(value) && (value.equalsIgnoreCase("true") || value.equals("1"))) {
+            log.setLevel(Level.INFO);
         }
     }
 }
