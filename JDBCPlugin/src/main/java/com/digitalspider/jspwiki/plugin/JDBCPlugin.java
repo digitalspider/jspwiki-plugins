@@ -16,14 +16,17 @@
 package com.digitalspider.jspwiki.plugin;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.wiki.PageManager;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.parser.JSPWikiMarkupParser;
 import org.apache.wiki.parser.WikiDocument;
+import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.render.XHTMLRenderer;
 
 import java.io.BufferedReader;
@@ -34,8 +37,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 public class JDBCPlugin implements WikiPlugin {
 
@@ -96,9 +105,11 @@ public class JDBCPlugin implements WikiPlugin {
     private String sql = DEFAULT_SQL;
     private Boolean header = DEFAULT_HEADER;
     private String source = DEFAULT_SOURCE;
+    private DataSource ds = null;
 
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+        setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
@@ -110,15 +121,20 @@ public class JDBCPlugin implements WikiPlugin {
         PageManager pageManager = engine.getPageManager();
         String baseUrl = engine.getBaseURL();
 
+        Connection conn = null;
         try {
-            Connection conn = null;
-            if (StringUtils.isBlank(dbUser) && StringUtils.isBlank(dbPassword)) {
-                conn = DriverManager.getConnection(dbUrl);
+
+            if (ds == null) {
+                if (StringUtils.isBlank(dbUser) && StringUtils.isBlank(dbPassword)) {
+                    conn = DriverManager.getConnection(dbUrl);
+                } else {
+                    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+                }
+                if (conn == null) {
+                    throw new Exception("Could not create connection for url=" + dbUrl + " user=" + dbUser);
+                }
             } else {
-                conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-            }
-            if (conn == null) {
-                throw new Exception("Could not create connection for url="+dbUrl+" user="+dbUser);
+                conn = ds.getConnection();
             }
 
             sql = addLimits(sqlType,sql,maxResults);
@@ -143,17 +159,20 @@ public class JDBCPlugin implements WikiPlugin {
             }
 
             log.info("result="+buffer.toString());
-            Reader in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buffer.toString().getBytes())));
-            JSPWikiMarkupParser parser = new JSPWikiMarkupParser(wikiContext, in);
-            WikiDocument doc = parser.parse();
-            log.debug("doc=" + doc);
-            XHTMLRenderer renderer = new XHTMLRenderer(wikiContext, doc);
-            result = renderer.getString();
+            result = engine.textToHTML(wikiContext,buffer.toString());
 
             result = "<div class='"+className+"'>"+result+"</div>";
         } catch (Exception e) {
             log.error("ERROR. "+e.getMessage()+". sql="+sql,e);
             throw new PluginException(e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    // ignore
+                }
+            }
         }
 
 		return result;
@@ -202,39 +221,46 @@ public class JDBCPlugin implements WikiPlugin {
                 throw new PluginException("Error: unable to load driver "+param+"! "+e.getMessage());
             }
         } else {
-            log.error("jspwiki-custom.properties has not been configured for "+paramName+"!");
-            throw new PluginException("jspwiki-custom.properties has not been configured for "+paramName+"!");
+            try {
+                Context ctx = new InitialContext();
+                ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/" + source);
+            } catch (NamingException e) {
+                log.error("Neither jspwiki-custom.properties or conf/context.xml has not been configured for "+source+"!");
+                throw new PluginException("Neither jspwiki-custom.properties or conf/context.xml has not been configured for "+source+"!");
+            }
         }
-        paramName = getPropKey(PROP_URL, source);
-        param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
-        if (StringUtils.isNotBlank(param)) {
-            log.info(paramName + "=" + param);
-            if (!StringUtils.isAsciiPrintable(param)) {
-                throw new PluginException(paramName + " property is not a valid value");
+        if (ds == null) {
+            paramName = getPropKey(PROP_URL, source);
+            param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+            if (StringUtils.isNotBlank(param)) {
+                log.info(paramName + "=" + param);
+                if (!StringUtils.isAsciiPrintable(param)) {
+                    throw new PluginException(paramName + " property is not a valid value");
+                }
+                if (!param.trim().startsWith(sqlType.startsWith)) {
+                    throw new PluginException("Error: " + paramName + " property has value " + param + ". " +
+                            "Expected: " + sqlType.urlDefaultPath);
+                }
+                dbUrl = param;
             }
-            if (!param.trim().startsWith(sqlType.startsWith)) {
-                throw new PluginException("Error: "+paramName+" property has value "+param+". "+
-                    "Expected: "+sqlType.urlDefaultPath);
+            paramName = getPropKey(PROP_USER, source);
+            param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+            if (StringUtils.isNotBlank(param)) {
+                log.info(paramName + "=" + param);
+                if (!StringUtils.isAsciiPrintable(param)) {
+                    throw new PluginException(paramName + " property is not a valid value");
+                }
+                dbUser = param;
             }
-            dbUrl = param;
-        }
-        paramName = getPropKey(PROP_USER,source);
-        param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
-        if (StringUtils.isNotBlank(param)) {
-            log.info(paramName + "=" + param);
-            if (!StringUtils.isAsciiPrintable(param)) {
-                throw new PluginException(paramName + " property is not a valid value");
+            paramName = getPropKey(PROP_PASSWORD, source);
+            param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
+            if (StringUtils.isNotBlank(param)) {
+                log.info(paramName + "=" + param);
+                if (!StringUtils.isAsciiPrintable(param)) {
+                    throw new PluginException(paramName + " property is not a valid value");
+                }
+                dbPassword = param;
             }
-            dbUser = param;
-        }
-        paramName = getPropKey(PROP_PASSWORD,source);
-        param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
-        if (StringUtils.isNotBlank(param)) {
-            log.info(paramName + "=" + param);
-            if (!StringUtils.isAsciiPrintable(param)) {
-                throw new PluginException(paramName + " property is not a valid value");
-            }
-            dbPassword = param;
         }
         paramName = getPropKey(PROP_MAXRESULTS,source);
         param = wikiContext.getEngine().getWikiProperties().getProperty(paramName);
@@ -281,33 +307,41 @@ public class JDBCPlugin implements WikiPlugin {
     private String addLimits(SQLType sqlType, String sql, Integer maxResults) {
         String result = sql;
         if (StringUtils.isNotBlank(sql)) {
+            result = sql.trim();
+            if (result.endsWith(";")) {
+                result = result.substring(result.length()-1);
+            }
             switch (sqlType) {
                 case MSSQL:
-                    if (!result.contains(" top")) {
+                    if (!result.toLowerCase().contains(" top")) {
                         result = sql.replace("select", "select top " + maxResults);
+                        result += ";";
                     }
                     break;
                 case MYSQL:
-                    if (!result.contains(" limit ")) {
-                        result = sql + " limit " + maxResults;
+                    if (!result.toLowerCase().contains(" limit ")) {
+                        result = result + " limit " + maxResults+";";
                     }
                     break;
                 case ORACLE:
-                    // TODO: change to use rownum
-                    result = sql.replace("select","select top "+maxResults);
+                    if (!result.toLowerCase().contains("rownum")) {
+                        result = "select * from ( "+result+" ) where ROWNUM <= " + maxResults+";";
+                    }
                     break;
                 case POSTGRESQL:
-                    if (!result.contains(" limit ")) {
-                        result = sql + " limit " + maxResults;
+                    if (!result.toLowerCase().contains(" limit ")) {
+                        result = result + " limit " + maxResults+";";
                     }
                     break;
                 case DB2:
-                    // TODO: How does this work?
-                    result = sql.replace("select","select top "+maxResults);
+                    if (!result.toLowerCase().contains(" fetch")) {
+                        result = result + " FETCH FIRST "+maxResults+" ROWS ONLY;";
+                    }
                     break;
                 case SYBASE:
-                    if (!result.contains(" top")) {
-                        result = sql.replace("select", "select top " + maxResults);
+                    if (!result.toLowerCase().contains(" top")) {
+                        result = result.replace("select", "select top " + maxResults);
+                        result += ";";
                     }
                     break;
             }
@@ -321,5 +355,11 @@ public class JDBCPlugin implements WikiPlugin {
             result+="."+source;
         }
         return result;
+    }
+
+    private void setLogForDebug(String value) {
+        if (StringUtils.isNotBlank(value) && (value.equalsIgnoreCase("true") || value.equals("1"))) {
+            log.setLevel(Level.INFO);
+        }
     }
 }
