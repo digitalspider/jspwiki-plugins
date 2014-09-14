@@ -15,4 +15,7 @@ cp $PLUGINSDIR/VideoPlugin/dist/*.jar $WEBLIBDIR/
 cp $PLUGINSDIR/JiraPlugin/dist/*.jar $WEBLIBDIR/
 unzip -q -o $PLUGINSDIR/JiraPlugin/dist/*.zip -d $WEBLIBDIR/
 cp $PLUGINSDIR/PluginListPlugin/dist/*.jar $WEBLIBDIR/
+cp -rf $PLUGINSDIR/JDBCPlugin/etc/*.jar -d $WEBLIBDIR/
+cp $PLUGINSDIR/JDBCPlugin/dist/*.jar $WEBLIBDIR/
+cp $PLUGINSDIR/AutoLinkHtmlFilter/dist/*.jar $WEBLIBDIR/
 
