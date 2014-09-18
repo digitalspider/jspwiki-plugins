@@ -16,7 +16,7 @@
     specific language governing permissions and limitations
     under the License.
  */
-package com.digitalspider.jspwiki.provider;
+package com.digitalspider.jspwiki.filter;
 
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiEngine;
@@ -48,7 +48,7 @@ import java.util.Properties;
  * path to a file specifying the other cryptographic properties. Ideally this file should be well
  * protected, and read only.
  *
- * <div style="color: red>WARNING: Once you use this <b>EncryptedFileSystemProvider</b> there is no going back. Make sure you know what you are doing!</div>
+ * <div style="color: red>WARNING: Once you use this <b>EncryptedPageFilter</b> there is no going back. Make sure you know what you are doing!</div>
  *
  * In future there are plans to be able to export your wiki content, so you can import it back with
  * with a simple {@link org.apache.wiki.providers.FileSystemProvider}. This does not exist yet!!
@@ -73,9 +73,9 @@ import java.util.Properties;
  *     </tr>
  * </table>
  */
-public class EncryptedFileSystemProvider extends FileSystemProvider {
+public class EncryptedPageFilter extends WikiFilter {
 
-    private static final Logger log = Logger.getLogger(EncryptedFileSystemProvider.class);
+    private static final Logger log = Logger.getLogger(EncryptedPageFilter.class);
 
     private static final int MIN_LENGTH = 10;
     public static final String PROP_CRYPTO_PROVIDER = "crypto.provider";
