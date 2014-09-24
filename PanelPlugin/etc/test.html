@@ -1,0 +1,25 @@
+<html>
+<head>
+<link rel="stylesheet" href="panel/panel.css"/>
+<script type="text/javascript" src="jscolor/jscolor.js"></script>
+<script type="text/javascript" src="panel/panel.js"></script>
+</head>
+<body>
+<div class="panel panel-abc" id="panel-123">
+  <div class="editToggle" id="123" onclick="toggleEditMode(this.id,'abc')">Edit</div>
+  <div class="header header-abc" id="header-123">Header</div>
+  <div class="content content-abc" id="content-123">Content can be how you like it</div>
+  <div class="footer footer-abc" id="footer-123">Footer</div>
+</div>
+<div class="panel panel-abc" id="panel-456">
+  <div class="editToggle" id="456" onclick="toggleEditMode(this.id,'abc')">Edit</div>
+  <div class="header header-abc" id="header-456">Header</div>
+  <div class="content content-abc" id="content-456">Content should not be too long</div>
+  <div class="footer footer-abc" id="footer-456">Footer</div>
+</div>
+<div id='colorSelectDiv' style='display:none;position:relative;width:21px;height:21px;'>
+  <span class="link" id='selectId' onclick="selectAlter(this.id)">ID</span>&nbsp;|&nbsp;<span class="link" id='selectClass' onclick="selectAlter(this.id)">CLASS</span>&nbsp;|&nbsp;<span class="link" id='selectText' onclick="selectAttribute(this.id)">TEXT</span>&nbsp;|&nbsp;<span class="link" id='selectBackground' onclick="selectAttribute(this.id)">BACKGROUND</span>&nbsp;|&nbsp;<span class="link" onclick="closeColorMap()">CLOSE</span>
+<input class="color" id='colorInput' onchange="clickColor('#'+this.color)"></input>
+</div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+   <plugin class="com.digitalspider.jspwiki.plugin.PanelPlugin">
+      <author>DigitalSpider</author>
+      <minVersion>2.10.1</minVersion>
+      <script>/jscolor/jscolor.js</script>
+      <script>/panel/panel.js</script>
+      <stylesheet>/panel/panel.css</stylesheet>
+      <alias>Panel</alias>
+   </plugin>
+</modules>
