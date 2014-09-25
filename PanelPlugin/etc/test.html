@@ -17,9 +17,18 @@
   <div class="content content-abc" id="content-456">Content should not be too long</div>
   <div class="footer footer-abc" id="footer-456">Footer</div>
 </div>
-<div id='colorSelectDiv' style='display:none;position:relative;width:21px;height:21px;'>
-  <span class="link" id='selectId' onclick="selectAlter(this.id)">ID</span>&nbsp;|&nbsp;<span class="link" id='selectClass' onclick="selectAlter(this.id)">CLASS</span>&nbsp;|&nbsp;<span class="link" id='selectText' onclick="selectAttribute(this.id)">TEXT</span>&nbsp;|&nbsp;<span class="link" id='selectBackground' onclick="selectAttribute(this.id)">BACKGROUND</span>&nbsp;|&nbsp;<span class="link" onclick="closeColorMap()">CLOSE</span>
-<input class="color" id='colorInput' onchange="clickColor('#'+this.color)"></input>
+<div id='colorSelectDiv' style='display:none;position:relative;width:150px;height:150px;'>
+  <div id='elementSelector'>
+  Select&nbsp;Element:&nbsp;<span class="link" id='selectId' onclick="selectChangeElement(this.id)">ID</span>&nbsp;|&nbsp;<span class="link" id='selectClass' onclick="selectChangeElement(this.id)">CLASS</span>&nbsp;|&nbsp;<span class="link" id='selectBody' onclick="selectChangeElement(this.id)">BODY</span>&nbsp;|&nbsp;<span class="link" onclick="closeColorMap()">CLOSE</span>
+  </div>
+  <div id='colorValueSelector'>
+  Select&nbsp;Color:&nbsp;<span class="link" id='selectText' onclick="selectColorValue(this.id)">Text</span>&nbsp;|&nbsp;<span class="link" id='selectBackground' onclick="selectColorValue(this.id)">Background</span>&nbsp;|&nbsp;<span class="link" id='selectBorder' onclick="selectColorValue(this.id)">Border</span>
+  </div>
+  <div id='valueSelector'>
+  Select&nbsp;Value:&nbsp;<span class="link" id='selectFont' onclick="selectValue(this.id)">Font</span>&nbsp;|&nbsp;<span class="link" id='selectFontSize' onclick="selectValue(this.id)">Font Size</span>&nbsp;|&nbsp;<span class="link" id='selectCorners' onclick="selectValue(this.id)">Corners</span>&nbsp;|&nbsp;<span class="link" id='selectPadding' onclick="selectValue(this.id)">Padding</span>&nbsp;|&nbsp;<span class="link" id='selectMargin' onclick="selectValue(this.id)">Margin</span>|&nbsp;<span class="link" id='selectMinWidth' onclick="selectValue(this.id)">MinWidth</span>|&nbsp;<span class="link" id='selectMinHeight' onclick="selectValue(this.id)">MinHeight</span>
+  </div>
+  <input class="color" id='colorInput' onchange="clickColor('#'+this.color)"></input>
+  <input class="valueInput" id='valueInput' onchange="alterValue(this.value)"></input>
 </div>
 </body>
 </html>

@@ -2,7 +2,7 @@ var selectedid="";
 var selectedclass="";
 var selectmode=false;
 var selectattr="selectBackground";
-var selectalter="selectId";
+var changeElement="selectId";
 
 function select(itemid,classid) {
   selectedid=itemid;
@@ -10,23 +10,29 @@ function select(itemid,classid) {
   selectmode=true;
   openColorMap();
 }
-function selectAttribute(attributeid) {
-  selectattr=attributeid;
+function selectColorValue(valueid) {
+  selectattr=valueid;
 }
-function selectAlter(alterid) {
-  selectalter=alterid;
+function selectValue(valueid) {
+  selectattr=valueid;
+}
+function selectChangeElement(changeElementId) {
+  changeElement=changeElementId;
 }
 function clickColor(hex) {
   if (selectmode) {
-    if (selectalter == 'selectId') {
+    if (changeElement == 'selectId') {
       var item = document.getElementById(selectedid);
       changeColor(item,hex);
-    } else if (selectalter == 'selectClass') {
+    } else if (changeElement == 'selectClass') {
       var panels = document.getElementsByClassName(selectedclass);
       for (i = 0; i < panels.length; i++) {
         var panel = panels[i];
         changeColor(panel,hex);
       }
+    } else if (changeElement == 'selectBody') {
+      var item = document.getElementsByTagName('body')[0];
+      changeColor(item,hex);
     }
   }
 }
@@ -43,7 +49,7 @@ function openColorMap() {
 function closeColorMap() {
   document.getElementById("colorSelectDiv").style.display="none";
   selectattr="selectBackground";
-  selectalter="selectId";
+  changeElement="selectId";
 }
 function toggleEditMode(itemid,classid) {
   var panelid = 'panel-'+itemid;
