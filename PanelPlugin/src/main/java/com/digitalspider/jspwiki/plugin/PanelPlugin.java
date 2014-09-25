@@ -18,27 +18,15 @@ package com.digitalspider.jspwiki.plugin;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.PageManager;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.filters.PageFilter;
 import org.apache.wiki.api.plugin.WikiPlugin;
-import org.apache.wiki.modules.WikiModuleInfo;
-import org.apache.wiki.parser.JSPWikiMarkupParser;
-import org.apache.wiki.parser.WikiDocument;
 import org.apache.wiki.plugin.DefaultPluginManager;
-import org.apache.wiki.render.XHTMLRenderer;
+import org.apache.wiki.ui.TemplateManager;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -47,23 +35,30 @@ public class PanelPlugin implements WikiPlugin {
 
 	private final Logger log = Logger.getLogger(PanelPlugin.class);
 
-    public enum ModuleType {
-        ALL, PLUGIN, FILTER, EDITOR
-    }
+    public static final String DEFAULT_ID = "123";
+    public static final String DEFAULT_CLASSID = "class";
+    public static final Boolean DEFAULT_SHOWEDIT = false;
+    public static final String DEFAULT_HEADER = "";
+    public static final String DEFAULT_FOOTER = "";
 
-    public static final String DEFAULT_CLASS = "plugin-list";
-    public static final ModuleType DEFAULT_TYPE = ModuleType.ALL;
-    public static final Boolean DEFAULT_SHOWSTYLE = false;
+    private static final String PARAM_ID = "id";
+    private static final String PARAM_CLASSID = "classid";
+    private static final String PARAM_SHOWEDIT = "showedit";
+    private static final String PARAM_HEADER = "header";
+    private static final String PARAM_FOOTER = "footer";
 
-    private static final String PARAM_CLASS = "class";
-    private static final String PARAM_TYPE = "type";
-    private static final String PARAM_SHOWSTYLE = "showstyle";
+    private String id = DEFAULT_ID;
+    private String classId = DEFAULT_CLASSID;
+    private Boolean showEdit = DEFAULT_SHOWEDIT;
+    private String header = DEFAULT_HEADER;
+    private String footer = DEFAULT_FOOTER;
 
-    private String className = DEFAULT_CLASS;
-    private ModuleType typeFilter = DEFAULT_TYPE;
-    private Boolean showStyle = DEFAULT_SHOWSTYLE;
+    private static final String RESOURCE_JSCOLOR_JS = "jscolor/jscolor.js";
+    private static final String RESOURCE_PANEL_JS = "panel/panel.js";
+    private static final String RESOURCE_PANEL_CSS = "panel/panel.css";
+    private List<String> pageResources = new ArrayList<String>();
 
-    private static final String DELIM = " | ";
+
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
         setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
@@ -73,82 +68,48 @@ public class PanelPlugin implements WikiPlugin {
         WikiEngine engine = wikiContext.getEngine();
         Properties props = engine.getWikiProperties();
 
+        addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_JSCOLOR_JS);
+        addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_PANEL_JS);
+        addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_STYLESHEET, RESOURCE_PANEL_CSS);
+
         // Validate all parameters
         validateParams(props, params);
 
-        PageManager pageManager = engine.getPageManager();
-        Collection<DefaultPluginManager.WikiPluginInfo> pluginModules = engine.getPluginManager().modules();
-        Collection<PageFilter> filterModules = engine.getFilterManager().modules();
-        Collection<WikiModuleInfo> pageModules = engine.getPageManager().modules(); // null
-        Collection<WikiModuleInfo> templateModules = engine.getTemplateManager().modules(); // empty list
-        Collection<WikiModuleInfo> editorModules = engine.getEditorManager().modules();
 
         try {
-            buffer.append("|| Module Type || Name (Alias) || Class || Author || Min-Max");
-            if (showStyle) {
-                buffer.append(" || Script/Stylesheet");
+            String body = params.get(DefaultPluginManager.PARAM_BODY);
+            String htmlBody = engine.textToHTML(wikiContext,body);
+            buffer.append("<div class='panel panel-"+classId+"' id='panel-"+id+"'>\n");
+            if (showEdit) {
+                buffer.append("<div class='editToggle' id='" + id + "' onclick='toggleEditMode(this.id,\"" + classId + "\")'>Edit</div>\n");
             }
+            if (StringUtils.isNotBlank(header)) {
+                buffer.append("<div class='header header-" + classId + "' id='header-" + id + "'>" + header + "</div>\n");
+            }
+            buffer.append("<div class='content content-" + classId + "' id='content-" + id + "'>" + htmlBody + "</div>\n");
+            if (StringUtils.isNotBlank(footer)) {
+                buffer.append("<div class='footer footer-" + classId + "' id='footer-" + id + "'>" + footer + "</div>\n");
+            }
+            buffer.append("</div>\n");
             buffer.append("\n");
-            String baseUrl = engine.getBaseURL();
-            if (typeFilter == ModuleType.ALL || typeFilter == ModuleType.PLUGIN) {
-                List<DefaultPluginManager.WikiPluginInfo> pluginModuleList = new ArrayList<DefaultPluginManager.WikiPluginInfo>();
-                pluginModuleList.addAll(pluginModules);
-                Collections.sort(pluginModuleList,new WikiPluginInfoComparator());
-                for (DefaultPluginManager.WikiPluginInfo info : pluginModuleList) {
-                    String name = info.getName();
-                    String author = info.getAuthor();
-                    buffer.append("| Plugin" + DELIM + getNameLinked(pageManager, name) + getAlias(info.getAlias()) +
-                            DELIM + getClassNameLinked(info.getClassName()) + DELIM + getNameLinked(pageManager, author) +
-                            DELIM + info.getMinVersion() + "-" + info.getMaxVersion());
-                    if (showStyle) {
-                        buffer.append(
-                                DELIM + getResourceLinked(baseUrl, info.getScriptLocation()) +
-                                        getResourceLinked(baseUrl, info.getStylesheetLocation()));
-                    }
-                    buffer.append("\n");
-                }
-            }
-            if (typeFilter == ModuleType.ALL || typeFilter == ModuleType.FILTER) {
-                List<PageFilter> filterModuleList = new ArrayList<PageFilter>();
-                filterModuleList.addAll(filterModules);
-                Collections.sort(filterModuleList,new PageFilterComparator());
-                for (PageFilter filter : filterModuleList) {
-                    String name = filter.getClass().getSimpleName();
-                    buffer.append("| Filter" + DELIM + getNameLinked(pageManager, name) +
-                            DELIM + getClassNameLinked(filter.getClass().getName()) + DELIM + "" +
-                            DELIM + "" + "-" + "");
-                    if (showStyle) {
-                        buffer.append(
-                                DELIM + "");
-                    }
+            buffer.append("<div id='colorSelectDiv' style='display:none;position:relative;width:150px;height:150px;'>\n"+
+            "<div id='elementSelector'>\n"+
+                    "Select&nbsp;Element:&nbsp;<span class='code' id='selectId' onclick='selectChangeElement(this.id)'>ID</span>&nbsp;|&nbsp;<span class='code' id='selectClass' onclick='selectChangeElement(this.id)'>CLASS</span>&nbsp;|&nbsp;<span class='code' id='selectBody' onclick='selectChangeElement(this.id)'>BODY</span>&nbsp;|&nbsp;<span class='code' onclick='closeColorMap()'>CLOSE</span>\n"+
+            "</div>\n"+
+            "<div id='styleSelectorColor' style='display:none'>\n"+
+                    "Select&nbsp;Color:&nbsp;<span class='code' id='selectTextColor' onclick='selectStyleColor(this.id)'>Text</span>&nbsp;|&nbsp;<span class='code' id='selectBackgroundColor' onclick='selectStyleColor(this.id)'>Background</span>&nbsp;|&nbsp;<span class='code' id='selectBorderColor' onclick='selectStyleColor(this.id)'>Border</span>\n"+
+            "</div>\n"+
+            "<div id='styleSelector' style='display:none'>\n"+
+                    "Select&nbsp;Style:&nbsp;<span class='code' id='selectFont' onclick='selectStyle(this.id)'>Font</span>&nbsp;|&nbsp;<span class='code' id='selectFontSize' onclick='selectStyle(this.id)'>Font Size</span>&nbsp;|&nbsp;<span class='code' id='selectBorder' onclick='selectStyle(this.id)'>Border</span>&nbsp;|&nbsp;<span class='code' id='selectCorners' onclick='selectStyle(this.id)'>Corners</span><br/>\n"+
+            "<span class='code' id='selectPadding' onclick='selectStyle(this.id)'>Padding</span>&nbsp;|&nbsp;<span class='code' id='selectMargin' onclick='selectStyle(this.id)'>Margin</span>|&nbsp;<span class='code' id='selectMinWidth' onclick='selectStyle(this.id)'>MinWidth</span>&nbsp;|&nbsp;<span class='code' id='selectMinHeight' onclick='selectStyle(this.id)'>MinHeight</span>&nbsp;|&nbsp;<span class='code' id='selectScroll' onclick='selectStyle(this.id)'>Scroll</span>&nbsp;|&nbsp;<span class='code' id='selectCustom' onclick='selectStyle(this.id)'>Custom</span>\n"+
+            "</div>\n"+
+            "<input class='color' id='colorInput' onchange='alterColor(\"#\"+this.color)' style='display:none'></input>\n"+
+            "<input class='styleInput' id='styleInput' onchange='alterStyle(this.value)' style='display:none'></input>\n"+
+            "<textarea class='customInput' id='customInput' onchange='alterStyle(this.value)' style='display:none'></textarea>\n"+
+            "</div>\n");
+            buffer.append("\n");
 
-                    buffer.append("\n");
-                }
-            }
-
-            if (typeFilter == ModuleType.ALL || typeFilter == ModuleType.EDITOR) {
-                List<WikiModuleInfo> editorModuleList = new ArrayList<WikiModuleInfo>();
-                editorModuleList.addAll(editorModules);
-                Collections.sort(editorModuleList,new WikiModuleInfoComparator());
-                for (WikiModuleInfo info : editorModuleList) {
-                    String name = info.getName();
-                    String author = info.getAuthor();
-                    buffer.append("| Editor" + DELIM + getNameLinked(pageManager, name) +
-                            DELIM + getClassNameLinked(info.getClass().getName()) + DELIM + getNameLinked(pageManager, author) +
-                            DELIM + info.getMinVersion() + "-" + info.getMaxVersion());
-                    if (showStyle) {
-                        buffer.append(
-                                DELIM + getResourceLinked(baseUrl, info.getScriptLocation()) +
-                                        getResourceLinked(baseUrl, info.getStylesheetLocation()));
-                    }
-                    buffer.append("\n");
-                }
-            }
-
-            log.info("result="+buffer.toString());
-            result = engine.textToHTML(wikiContext,buffer.toString());
-
-            result = "<div class='"+className+"'>"+result+"</div>";
+            result = buffer.toString();
         } catch (Exception e) {
             log.error(e,e);
             throw new PluginException(e.getMessage());
@@ -161,7 +122,7 @@ public class PanelPlugin implements WikiPlugin {
     protected void validateParams(Properties props, Map<String, String> params) throws PluginException {
         String paramName;
         String param;
-
+/*
         log.info("validateParams() START");
         paramName = PARAM_CLASS;
         param = params.get(paramName);
@@ -205,69 +166,18 @@ public class PanelPlugin implements WikiPlugin {
             }
             showStyle = Boolean.parseBoolean(param);
         }
+*/
     }
 
-    private String getAlias(String alias) {
-        String result = "";
-        if (StringUtils.isNotBlank(alias)) {
-            result = " (" + alias + ")";
-        }
-        return result;
-    }
-
-    private String getClassNameLinked(String className) {
-        String result = className;
-        if (StringUtils.isNotBlank(className) && className.startsWith("org.apache.wiki")) {
-            String pathName = className.replace(".","/");
-            if (pathName.contains("$")) {
-                int index = pathName.indexOf("$");
-                pathName = pathName.substring(0,index);
-            }
-            result = "["+className+"|http://jspwiki.apache.org/apidocs/2.10.1/"+pathName+".html]";
-        }
-        return result;
-    }
-
-    private String getResourceLinked(String baseUrl, String resourcePath) {
-        String result = "";
-        if (StringUtils.isNotBlank(resourcePath)) {
-            result = "[" + resourcePath + "|"+baseUrl+"/"+resourcePath+"]";
-        }
-        return result;
-    }
-
-    private String getNameLinked(PageManager pageManager, String name) {
-        String result = name;
-        if (StringUtils.isNotBlank(name)) {
-            try {
-                if (pageManager.pageExists(name)) {
-                    result = "[" + name + "]";
-                }
-            } catch (Exception e) {
-                log.error(e,e);
-            }
-        }
-        return result;
-    }
-
-    public class WikiModuleInfoComparator implements Comparator<WikiModuleInfo> {
-        public int compare(WikiModuleInfo m1, WikiModuleInfo m2) {
-            return m1.getClass().getName().compareTo(m2.getClass().getName());
+    public void addUniqueTemplateResourceRequest(WikiContext wikiContext, String resourceType, String resourceName) {
+        String pageName = wikiContext.getPage().getName();
+        int pageVersion = wikiContext.getPage().getVersion();
+        String pageResource = pageName+":"+pageVersion+":"+resourceType+":"+resourceName;
+        if (!pageResources.contains(pageResource)) {
+            TemplateManager.addResourceRequest(wikiContext, resourceType, resourceName);
+            pageResources.add(pageResource);
         }
     }
-
-    public class WikiPluginInfoComparator implements Comparator<DefaultPluginManager.WikiPluginInfo> {
-        public int compare(DefaultPluginManager.WikiPluginInfo m1, DefaultPluginManager.WikiPluginInfo m2) {
-            return m1.getClassName().compareTo(m2.getClassName());
-        }
-    }
-
-    public class PageFilterComparator implements Comparator<PageFilter> {
-        public int compare(PageFilter pf1, PageFilter pf2) {
-            return pf1.getClass().getSimpleName().compareTo(pf2.getClass().getSimpleName());
-        }
-    }
-
 
     private void setLogForDebug(String value) {
         if (StringUtils.isNotBlank(value) && (value.equalsIgnoreCase("true") || value.equals("1"))) {
