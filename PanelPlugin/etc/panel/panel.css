@@ -1,7 +1,9 @@
+body {
+  background: #F2F5EE;
+}
 .panel {
   background: white;
   border: solid thin;
-  border-radius: 10px;
   float: left;
   margin: 2px;
 }
@@ -10,8 +12,6 @@
 }
 .header {
   background: yellow;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
   padding: 2px;
 }
 .content {
@@ -20,13 +20,7 @@
 }
 .footer {
   background: lightgreen;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
   padding: 2px;
-}
-.link {
-  color: blue;
-  text-decoration: underline;
 }
 .editToggle {
   float: right;
@@ -34,4 +28,27 @@
   margin-right: 4px;
   border: solid thin;
 }
-
+code, .code {
+    background-color: #f9f2f4;
+    border-radius: 4px;
+    color: #c7254e;
+    font-size: 90%;
+    padding: 2px 4px;
+    white-space: nowrap;
+    font-family: Monaco,Menlo,Consolas,"Courier New",monospace;
+}
+mark, .mark {
+    background-color: #fcf8e3;
+    padding: 0.2em;
+}
+.panel {
+  border-radius: 10px;
+}
+.header {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.footer {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
