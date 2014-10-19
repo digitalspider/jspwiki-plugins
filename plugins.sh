@@ -1,0 +1,1 @@
+/opt/digitalspider/jspwiki/scripts/plugins.sh

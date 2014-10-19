@@ -27,9 +27,11 @@ import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.ui.TemplateManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Vector;
 
 public class PanelPlugin implements WikiPlugin {
 
@@ -53,6 +55,7 @@ public class PanelPlugin implements WikiPlugin {
     public static final String DEFAULT_COLORCONTENTTEXT = "";
     public static final String DEFAULT_COLORFOOTERTEXT = "";
     public static final String DEFAULT_COLORBORDER = "";
+    public static final String DEFAULT_BORDER = "";
     public static final String DEFAULT_MARGIN = "";
     public static final String DEFAULT_PADDING = "";
     public static final String DEFAULT_CORNERS = "";
@@ -75,6 +78,7 @@ public class PanelPlugin implements WikiPlugin {
     private static final String PARAM_COLORCONTENTTEXT = "colorcontenttext";
     private static final String PARAM_COLORFOOTERTEXT = "colorfootertext";
     private static final String PARAM_COLORBORDER = "colorborder";
+    private static final String PARAM_BORDER = "border";
     private static final String PARAM_MARGIN = "margin";
     private static final String PARAM_PADDING = "padding";
     private static final String PARAM_CORNERS = "corners";
@@ -97,6 +101,7 @@ public class PanelPlugin implements WikiPlugin {
     private String colorcontenttext = DEFAULT_COLORCONTENTTEXT;
     private String colorfootertext = DEFAULT_COLORFOOTERTEXT;
     private String colorborder = DEFAULT_COLORBORDER;
+    private String border = DEFAULT_BORDER;
     private String margin = DEFAULT_MARGIN;
     private String padding = DEFAULT_PADDING;
     private String corners = DEFAULT_CORNERS;
@@ -104,7 +109,7 @@ public class PanelPlugin implements WikiPlugin {
 
     private static final String RESOURCE_PANEL_JS = "panel/panel.js";
     private static final String RESOURCE_PANEL_CSS = "panel/panel.css";
-    private List<String> pageResources = new ArrayList<String>();
+    private static List<String> pageResources = new ArrayList<String>();
 
 
 	@Override
@@ -128,8 +133,60 @@ public class PanelPlugin implements WikiPlugin {
             if (StringUtils.isNotBlank(body)) {
                 htmlBody = engine.textToHTML(wikiContext, body);
             }
-            buffer.append("<div class='panel panel-"+classId+"' id='panel-"+id+"'>\n");
             String elementId = classId+"-"+id;
+            buffer.append("<div class='panel panel-"+classId+"' id='panel-"+elementId+"'\n");
+            if (StringUtils.isNotBlank(width)) {
+                buffer.append(" data-width='" + width + "'");
+            }
+            if (StringUtils.isNotBlank(minwidth)) {
+                buffer.append(" data-minwidth='" + minwidth + "'");
+            }
+            if (StringUtils.isNotBlank(height)) {
+                buffer.append(" data-height='" + height + "'");
+            }
+            if (StringUtils.isNotBlank(minheight)) {
+                buffer.append(" data-minheight='" + minheight + "'");
+            }
+            if (StringUtils.isNotBlank(colorpanelbg)) {
+                buffer.append(" data-colorpanelbg='" + colorpanelbg + "'");
+            }
+            if (StringUtils.isNotBlank(colorheaderbg)) {
+                buffer.append(" data-colorheaderbg='" + colorheaderbg + "'");
+            }
+            if (StringUtils.isNotBlank(colorcontentbg)) {
+                buffer.append(" data-colorcontentbg='" + colorcontentbg + "'");
+            }
+            if (StringUtils.isNotBlank(colorfooterbg)) {
+                buffer.append(" data-colorfooterbg='" + colorfooterbg + "'");
+            }
+            if (StringUtils.isNotBlank(colorpaneltext)) {
+                buffer.append(" data-colorpaneltext='" + colorpaneltext + "'");
+            }
+            if (StringUtils.isNotBlank(colorheadertext)) {
+                buffer.append(" data-colorheadertext='" + colorheadertext + "'");
+            }
+            if (StringUtils.isNotBlank(colorcontenttext)) {
+                buffer.append(" data-colorcontenttext='" + colorcontenttext + "'");
+            }
+            if (StringUtils.isNotBlank(colorfootertext)) {
+                buffer.append(" data-colorfootertext='" + colorfootertext + "'");
+            }
+            if (StringUtils.isNotBlank(colorborder)) {
+                buffer.append(" data-colorborder='" + colorborder + "'");
+            }
+            if (StringUtils.isNotBlank(border)) {
+                buffer.append(" data-border='" + border + "'");
+            }
+            if (StringUtils.isNotBlank(margin)) {
+                buffer.append(" data-margin='" + margin + "'");
+            }
+            if (StringUtils.isNotBlank(padding)) {
+                buffer.append(" data-padding='" + padding + "'");
+            }
+            if (StringUtils.isNotBlank(corners)) {
+                buffer.append(" data-corners='" + corners + "'");
+            }
+            buffer.append(">");
             /*
             if (showEdit) {
                 buffer.append("<div class='editToggle' id='" + id + "' onclick='toggleEditMode(this.id,\"" + classId + "\")'>Edit</div>\n");
@@ -196,6 +253,160 @@ public class PanelPlugin implements WikiPlugin {
             footer = param;
         }
 
+        paramName = PARAM_WIDTH;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            width = param;
+        }
+        paramName = PARAM_MINWIDTH;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            minwidth = param;
+        }
+        paramName = PARAM_HEIGHT;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            height = param;
+        }
+        paramName = PARAM_MINHEIGHT;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            minheight = param;
+        }
+        paramName = PARAM_COLORPANELBG;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorpanelbg = param;
+        }
+        paramName = PARAM_COLORHEADERBG;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorheaderbg = param;
+        }
+        paramName = PARAM_COLORCONTENTBG;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorcontentbg = param;
+        }
+        paramName = PARAM_COLORFOOTERBG;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorfooterbg = param;
+        }
+        paramName = PARAM_COLORPANELTEXT;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorpaneltext = param;
+        }
+        paramName = PARAM_COLORHEADERTEXT;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorheadertext = param;
+        }
+        paramName = PARAM_COLORCONTENTTEXT;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorcontenttext = param;
+        }
+        paramName = PARAM_COLORFOOTERTEXT;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorfootertext = param;
+        }
+        paramName = PARAM_COLORBORDER;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            colorborder = param;
+        }
+        paramName = PARAM_BORDER;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            border = param;
+        }
+        paramName = PARAM_MARGIN;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            margin = param;
+        }
+        paramName = PARAM_PADDING;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            padding = param;
+        }
+        paramName = PARAM_CORNERS;
+        param = params.get(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new PluginException(paramName + " parameter is not a valid value");
+            }
+            corners = param;
+        }
+
         paramName = PARAM_SHOWEDIT;
         param = params.get(paramName);
         if (StringUtils.isNotBlank(param)) {
@@ -210,13 +421,18 @@ public class PanelPlugin implements WikiPlugin {
     }
 
     public void addUniqueTemplateResourceRequest(WikiContext wikiContext, String resourceType, String resourceName) {
-        String pageName = wikiContext.getPage().getName();
-        int pageVersion = wikiContext.getPage().getVersion();
-        String pageResource = pageName+":"+pageVersion+":"+resourceType+":"+resourceName;
-        if (!pageResources.contains(pageResource)) {
-            TemplateManager.addResourceRequest(wikiContext, resourceType, resourceName);
-            pageResources.add(pageResource);
+        HashMap<String,Vector<String>> resourcemap = (HashMap<String,Vector<String>>) wikiContext.getVariable( TemplateManager.RESOURCE_INCLUDES );
+        if (resourcemap != null && !resourcemap.isEmpty()) {
+            Vector<String> resources = resourcemap.get(resourceType);
+            if (resources != null) {
+                for (String resource : resources) {
+                    if (resource.contains(resourceName)) {
+                        return;
+                    }
+                }
+            }
         }
+        TemplateManager.addResourceRequest(wikiContext, resourceType, resourceName);
     }
 
     private void setLogForDebug(String value) {

@@ -93,24 +93,24 @@ function applyPanelJS() {
         }
       }
       // Rounded Corners
-      var corner = panel.dataset.corner;
-      if (corner) {
-        panel.style.borderRadius=corner;
+      var corners = panel.dataset.corners;
+      if (corners) {
+        panel.style.borderRadius=corners;
         if (headerEle) {
-          headerEle.style.borderTopLeftRadius=corner;
-          headerEle.style.borderTopRightRadius=corner;      
+          headerEle.style.borderTopLeftRadius=corners;
+          headerEle.style.borderTopRightRadius=corners;      
         }
         if (footerEle) {
-          footerEle.style.borderBottomLeftRadius=corner;
-          footerEle.style.borderBottomRightRadius=corner;      
+          footerEle.style.borderBottomLeftRadius=corners;
+          footerEle.style.borderBottomRightRadius=corners;      
         }
         if (!headerEle && contentEle) {
-          contentEle.style.borderTopLeftRadius=corner;
-          contentEle.style.borderTopRightRadius=corner;
+          contentEle.style.borderTopLeftRadius=corners;
+          contentEle.style.borderTopRightRadius=corners;
         }
         if (!footerEle && contentEle) {
-          contentEle.style.borderBottomLeftRadius=corner;
-          contentEle.style.borderBottomRightRadius=corner;
+          contentEle.style.borderBottomLeftRadius=corners;
+          contentEle.style.borderBottomRightRadius=corners;
         }
       }
     }
