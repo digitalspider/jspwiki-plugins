@@ -1,0 +1,54 @@
+body {
+  background: #F2F5EE;
+}
+.panel {
+  background: white;
+  border: solid thin;
+  float: left;
+  margin: 2px;
+}
+.selected {
+  border: solid thick;
+}
+.header {
+  background: yellow;
+  padding: 2px;
+}
+.content {
+  background: lightblue;
+  padding: 2px;
+}
+.footer {
+  background: lightgreen;
+  padding: 2px;
+}
+.editToggle {
+  float: right;
+  padding: 1px;
+  margin-right: 4px;
+  border: solid thin;
+}
+code, .code {
+    background-color: #f9f2f4;
+    border-radius: 4px;
+    color: #c7254e;
+    font-size: 90%;
+    padding: 2px 4px;
+    white-space: nowrap;
+    font-family: Monaco,Menlo,Consolas,"Courier New",monospace;
+}
+mark, .mark {
+    background-color: #fcf8e3;
+    padding: 0.2em;
+}
+.panel {
+  border-radius: 10px;
+}
+.header {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.footer {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}

@@ -35,73 +35,25 @@ public class PanelPlugin implements WikiPlugin {
 
 	private final Logger log = Logger.getLogger(PanelPlugin.class);
 
-    public static final String DEFAULT_ID = "1";
-    public static final String DEFAULT_CLASSID = "default";
+    public static final String DEFAULT_ID = "123";
+    public static final String DEFAULT_CLASSID = "class";
     public static final Boolean DEFAULT_SHOWEDIT = false;
     public static final String DEFAULT_HEADER = "";
     public static final String DEFAULT_FOOTER = "";
-    public static final String DEFAULT_WIDTH = "";
-    public static final String DEFAULT_MINWIDTH = "";
-    public static final String DEFAULT_HEIGHT = "";
-    public static final String DEFAULT_MINHEIGHT = "";
-    public static final String DEFAULT_COLORPANELBG = "";
-    public static final String DEFAULT_COLORHEADERBG = "";
-    public static final String DEFAULT_COLORCONTENTBG = "";
-    public static final String DEFAULT_COLORFOOTERBG = "";
-    public static final String DEFAULT_COLORPANELTEXT = "";
-    public static final String DEFAULT_COLORHEADERTEXT = "";
-    public static final String DEFAULT_COLORCONTENTTEXT = "";
-    public static final String DEFAULT_COLORFOOTERTEXT = "";
-    public static final String DEFAULT_COLORBORDER = "";
-    public static final String DEFAULT_MARGIN = "";
-    public static final String DEFAULT_PADDING = "";
-    public static final String DEFAULT_CORNERS = "";
 
     private static final String PARAM_ID = "id";
     private static final String PARAM_CLASSID = "classid";
     private static final String PARAM_SHOWEDIT = "showedit";
     private static final String PARAM_HEADER = "header";
     private static final String PARAM_FOOTER = "footer";
-    private static final String PARAM_WIDTH = "width";
-    private static final String PARAM_MINWIDTH = "minwidth";
-    private static final String PARAM_HEIGHT = "height";
-    private static final String PARAM_MINHEIGHT = "minheight";
-    private static final String PARAM_COLORPANELBG = "colorpanelbg";
-    private static final String PARAM_COLORHEADERBG = "colorheaderbg";
-    private static final String PARAM_COLORCONTENTBG = "colorcontentbg";
-    private static final String PARAM_COLORFOOTERBG = "colorfooterbg";
-    private static final String PARAM_COLORPANELTEXT = "colorpaneltext";
-    private static final String PARAM_COLORHEADERTEXT = "colorheadertext";
-    private static final String PARAM_COLORCONTENTTEXT = "colorcontenttext";
-    private static final String PARAM_COLORFOOTERTEXT = "colorfootertext";
-    private static final String PARAM_COLORBORDER = "colorborder";
-    private static final String PARAM_MARGIN = "margin";
-    private static final String PARAM_PADDING = "padding";
-    private static final String PARAM_CORNERS = "corners";
 
     private String id = DEFAULT_ID;
     private String classId = DEFAULT_CLASSID;
     private Boolean showEdit = DEFAULT_SHOWEDIT;
     private String header = DEFAULT_HEADER;
     private String footer = DEFAULT_FOOTER;
-    private String width = DEFAULT_WIDTH;
-    private String minwidth = DEFAULT_MINWIDTH;
-    private String height = DEFAULT_HEIGHT;
-    private String minheight = DEFAULT_MINHEIGHT;
-    private String colorpanelbg = DEFAULT_COLORPANELBG;
-    private String colorheaderbg = DEFAULT_COLORHEADERBG;
-    private String colorcontentbg = DEFAULT_COLORCONTENTBG;
-    private String colorfooterbg = DEFAULT_COLORFOOTERBG;
-    private String colorpaneltext = DEFAULT_COLORPANELTEXT;
-    private String colorheadertext = DEFAULT_COLORHEADERTEXT;
-    private String colorcontenttext = DEFAULT_COLORCONTENTTEXT;
-    private String colorfootertext = DEFAULT_COLORFOOTERTEXT;
-    private String colorborder = DEFAULT_COLORBORDER;
-    private String margin = DEFAULT_MARGIN;
-    private String padding = DEFAULT_PADDING;
-    private String corners = DEFAULT_CORNERS;
 
-
+    private static final String RESOURCE_JSCOLOR_JS = "jscolor/jscolor.js";
     private static final String RESOURCE_PANEL_JS = "panel/panel.js";
     private static final String RESOURCE_PANEL_CSS = "panel/panel.css";
     private List<String> pageResources = new ArrayList<String>();
@@ -116,11 +68,13 @@ public class PanelPlugin implements WikiPlugin {
         WikiEngine engine = wikiContext.getEngine();
         Properties props = engine.getWikiProperties();
 
+        addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_JSCOLOR_JS);
         addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_PANEL_JS);
         addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_STYLESHEET, RESOURCE_PANEL_CSS);
 
         // Validate all parameters
         validateParams(props, params);
+
 
         try {
             String htmlBody = "";
@@ -129,20 +83,33 @@ public class PanelPlugin implements WikiPlugin {
                 htmlBody = engine.textToHTML(wikiContext, body);
             }
             buffer.append("<div class='panel panel-"+classId+"' id='panel-"+id+"'>\n");
-            String elementId = classId+"-"+id;
-            /*
             if (showEdit) {
                 buffer.append("<div class='editToggle' id='" + id + "' onclick='toggleEditMode(this.id,\"" + classId + "\")'>Edit</div>\n");
             }
-            */
             if (StringUtils.isNotBlank(header)) {
-                buffer.append("<div class='header header-" + classId + "' id='header-" + elementId + "'>" + header + "</div>\n");
+                buffer.append("<div class='header header-" + classId + "' id='header-" + id + "'>" + header + "</div>\n");
             }
-            buffer.append("<div class='content content-" + classId + "' id='content-" + elementId + "'>" + htmlBody + "</div>\n");
+            buffer.append("<div class='content content-" + classId + "' id='content-" + id + "'>" + htmlBody + "</div>\n");
             if (StringUtils.isNotBlank(footer)) {
-                buffer.append("<div class='footer footer-" + classId + "' id='footer-" + elementId + "'>" + footer + "</div>\n");
+                buffer.append("<div class='footer footer-" + classId + "' id='footer-" + id + "'>" + footer + "</div>\n");
             }
             buffer.append("</div>\n");
+            buffer.append("\n");
+            buffer.append("<div id='colorSelectDiv' style='display:none;position:relative;width:150px;height:150px;'>\n"+
+            "<div id='elementSelector'>\n"+
+                    "Select&nbsp;Element:&nbsp;<span class='code' id='selectId' onclick='selectChangeElement(this.id)'>ID</span>&nbsp;|&nbsp;<span class='code' id='selectClass' onclick='selectChangeElement(this.id)'>CLASS</span>&nbsp;|&nbsp;<span class='code' id='selectBody' onclick='selectChangeElement(this.id)'>BODY</span>&nbsp;|&nbsp;<span class='code' onclick='closeColorMap()'>CLOSE</span>\n"+
+            "</div>\n"+
+            "<div id='styleSelectorColor' style='display:none'>\n"+
+                    "Select&nbsp;Color:&nbsp;<span class='code' id='selectTextColor' onclick='selectStyleColor(this.id)'>Text</span>&nbsp;|&nbsp;<span class='code' id='selectBackgroundColor' onclick='selectStyleColor(this.id)'>Background</span>&nbsp;|&nbsp;<span class='code' id='selectBorderColor' onclick='selectStyleColor(this.id)'>Border</span>\n"+
+            "</div>\n"+
+            "<div id='styleSelector' style='display:none'>\n"+
+                    "Select&nbsp;Style:&nbsp;<span class='code' id='selectFont' onclick='selectStyle(this.id)'>Font</span>&nbsp;|&nbsp;<span class='code' id='selectFontSize' onclick='selectStyle(this.id)'>Font Size</span>&nbsp;|&nbsp;<span class='code' id='selectBorder' onclick='selectStyle(this.id)'>Border</span>&nbsp;|&nbsp;<span class='code' id='selectCorners' onclick='selectStyle(this.id)'>Corners</span><br/>\n"+
+            "<span class='code' id='selectPadding' onclick='selectStyle(this.id)'>Padding</span>&nbsp;|&nbsp;<span class='code' id='selectMargin' onclick='selectStyle(this.id)'>Margin</span>|&nbsp;<span class='code' id='selectMinWidth' onclick='selectStyle(this.id)'>MinWidth</span>&nbsp;|&nbsp;<span class='code' id='selectMinHeight' onclick='selectStyle(this.id)'>MinHeight</span>&nbsp;|&nbsp;<span class='code' id='selectScroll' onclick='selectStyle(this.id)'>Scroll</span>&nbsp;|&nbsp;<span class='code' id='selectCustom' onclick='selectStyle(this.id)'>Custom</span>\n"+
+            "</div>\n"+
+            "<input class='color' id='colorInput' onchange='alterColor(\"#\"+this.color)' style='display:none'></input>\n"+
+            "<input class='styleInput' id='styleInput' onchange='alterStyle(this.value)' style='display:none'></input>\n"+
+            "<textarea class='customInput' id='customInput' onchange='alterStyle(this.value)' style='display:none'></textarea>\n"+
+            "</div>\n");
             buffer.append("\n");
 
             result = buffer.toString();
@@ -150,6 +117,7 @@ public class PanelPlugin implements WikiPlugin {
             log.error(e,e);
             throw new PluginException(e.getMessage());
         }
+
 
 		return result;
 	}

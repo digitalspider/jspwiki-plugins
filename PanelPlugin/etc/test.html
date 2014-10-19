@@ -1,36 +1,50 @@
 <html>
 <head>
 <link rel="stylesheet" href="panel/panel.css"/>
-<script type="text/javascript" src="jscolor/jscolor.js"></script>
 <script type="text/javascript" src="panel/panel.js"></script>
 </head>
 <body>
-<div class='panel panel-abc' id='panel-123'>
-  <div class='editToggle' id='123' onclick='toggleEditMode(this.id,"abc")'>Edit</div>
-  <div class='header header-abc' id='header-123'>Header</div>
-  <div class='content content-abc' id='content-123'>Content can be how you like it</div>
-  <div class='footer footer-abc' id='footer-123'>Footer</div>
+
+<div class='panel panel-abc' id='panel-abc-1'
+ data-minwidth='200px'
+ data-corner='30px'
+ data-colorcontentbg='lightyellow'
+ data-colorheadertext='red'
+ data-colorheaderbg='pink'
+ data-colorborder='green'
+ data-colorpanelbg='lightgreen'
+ data-padding='12px'
+ data-margin='12px'>
+  <div class='header header-abc' id='header-abc-1'>Header</div>
+  <div class='content content-abc' id='content-abc-1'>Content can be how you like it</div>
+  <div class='footer footer-abc' id='footer-abc-1'>Footer</div>
 </div>
-<div class='panel panel-abc' id='panel-456'>
-  <div class='editToggle' id='456' onclick='toggleEditMode(this.id,"abc")'>Edit</div>
-  <div class='header header-abc' id='header-456'>Header</div>
-  <div class='content content-abc' id='content-456'>Content should not be too long</div>
-  <div class='footer footer-abc' id='footer-456'>Footer</div>
+
+<div class='panel panel-abc' id='panel-abc-2'
+ data-corner='10px'
+ data-colorpanelbg='lightgreen'
+ data-colorpaneltext='blue'
+ data-colorborder='green'
+ data-border='solid thick'
+ data-padding='12px'
+ data-margin='5px'>
+  <div class='header header-abc' id='header-abc-2'>Header</div>
+  <div class='content content-abc' id='content-abc-2'>Content should not be too long</div>
 </div>
-<div id='colorSelectDiv' style='display:none;position:relative;width:150px;height:150px;'>
-  <div id='elementSelector'>
-  Select&nbsp;Element:&nbsp;<span class='code' id='selectId' onclick='selectChangeElement(this.id)'>ID</span>&nbsp;|&nbsp;<span class='code' id='selectClass' onclick='selectChangeElement(this.id)'>CLASS</span>&nbsp;|&nbsp;<span class='code' id='selectBody' onclick='selectChangeElement(this.id)'>BODY</span>&nbsp;|&nbsp;<span class='code' onclick='closeColorMap()'>CLOSE</span>
-  </div>
-  <div id='styleSelectorColor' style='display:none'>
-  Select&nbsp;Color:&nbsp;<span class='code' id='selectTextColor' onclick='selectStyleColor(this.id)'>Text</span>&nbsp;|&nbsp;<span class='code' id='selectBackgroundColor' onclick='selectStyleColor(this.id)'>Background</span>&nbsp;|&nbsp;<span class='code' id='selectBorderColor' onclick='selectStyleColor(this.id)'>Border</span>
-  </div>
-  <div id='styleSelector' style='display:none'>
-  Select&nbsp;Style:&nbsp;<span class='code' id='selectFont' onclick='selectStyle(this.id)'>Font</span>&nbsp;|&nbsp;<span class='code' id='selectFontSize' onclick='selectStyle(this.id)'>Font Size</span>&nbsp;|&nbsp;<span class='code' id='selectBorder' onclick='selectStyle(this.id)'>Border</span>&nbsp;|&nbsp;<span class='code' id='selectCorners' onclick='selectStyle(this.id)'>Corners</span><br/>
-<span class='code' id='selectPadding' onclick='selectStyle(this.id)'>Padding</span>&nbsp;|&nbsp;<span class='code' id='selectMargin' onclick='selectStyle(this.id)'>Margin</span>|&nbsp;<span class='code' id='selectMinWidth' onclick='selectStyle(this.id)'>MinWidth</span>&nbsp;|&nbsp;<span class='code' id='selectMinHeight' onclick='selectStyle(this.id)'>MinHeight</span>&nbsp;|&nbsp;<span class='code' id='selectScroll' onclick='selectStyle(this.id)'>Scroll</span>&nbsp;|&nbsp;<span class='code' id='selectCustom' onclick='selectStyle(this.id)'>Custom</span>
-  </div>
-  <input class='color' id='colorInput' onchange='alterColor("#"+this.color)' style='display:none'></input>
-  <input class='styleInput' id='styleInput' onchange='alterStyle(this.value)' style='display:none'></input>
-  <textarea class='customInput' id='customInput' onchange='alterStyle(this.value)' style='display:none'></textarea>
+
+<div class='panel panel-abc' id='panel-abc-3' data-corner='10px' data-minheight='200px'>
+  <div class='content content-abc' id='content-abc-3'>Content should not be too long</div>
 </div>
+
+<div class='panel panel-abc' id='panel-abc-4' data-corner='10px'>
+  <div class='content content-abc' id='content-abc-4'>Content should not be too long</div>
+  <div class='footer footer-abc' id='footer-abc-4'>Footer</div>
+</div>
+
+<div class='panel panel-abc' id='panel-abc-5' data-corner='10px'>
+  <div class='header header-abc' id='header-abc-5'>Header 5</div>
+  <div class='footer footer-abc' id='footer-abc-5'>Footer 5</div>
+</div>
+
 </body>
 </html>
