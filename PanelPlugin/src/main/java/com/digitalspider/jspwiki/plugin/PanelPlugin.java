@@ -128,7 +128,7 @@ public class PanelPlugin implements WikiPlugin {
 
         try {
             // Add custom css
-            addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_STYLESHEET, "/panel/"+classId+".css");
+            addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_STYLESHEET, "panel/"+classId+".css");
 
             String htmlBody = "";
             String body = params.get(DefaultPluginManager.PARAM_BODY);

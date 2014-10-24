@@ -1,0 +1,16 @@
+.panel-blue {
+  border: solid thin;
+  float: left;
+  margin: 2px;
+}
+.header-blue {
+  background: lightblue;
+  padding: 5px;
+}
+.content-blue {
+  padding: 5px;
+}
+.footer-blue {
+  background: lightblue;
+  padding: 5px;
+}

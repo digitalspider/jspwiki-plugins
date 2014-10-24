@@ -3,8 +3,8 @@
    <plugin class="com.digitalspider.jspwiki.plugin.PanelPlugin">
       <author>DigitalSpider</author>
       <minVersion>2.10.1</minVersion>
-      <script>/panel/panel.js</script>
-      <stylesheet>/panel/panel.css</stylesheet>
+      <script>panel/panel.js</script>
+      <stylesheet>panel/panel.css</stylesheet>
       <alias>Panel</alias>
    </plugin>
 </modules>

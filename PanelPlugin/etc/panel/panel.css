@@ -1,16 +1,16 @@
-.panel {
+.panel-default {
   border: solid thin;
   float: left;
   margin: 2px;
 }
-.header {
+.header-default {
   background: #D2D2D2;
   padding: 5px;
 }
-.content {
+.content-default {
   padding: 5px;
 }
-.footer {
+.footer-default {
   background: #D2D2D2;
   padding: 5px;
 }
