@@ -21,16 +21,22 @@ import org.apache.log4j.Logger;
 import org.apache.wiki.PageManager;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
+import org.apache.wiki.WikiPage;
 import org.apache.wiki.api.engine.PluginManager;
+import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.api.exceptions.PluginException;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.parser.JSPWikiMarkupParser;
 import org.apache.wiki.parser.WikiDocument;
 import org.apache.wiki.plugin.DefaultPluginManager;
+import org.apache.wiki.providers.WikiPageProvider;
 import org.apache.wiki.render.XHTMLRenderer;
+import org.apache.wiki.search.QueryItem;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.sql.Connection;
@@ -39,6 +45,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -47,7 +57,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-public class JDBCPageProvider implements WikiPlugin {
+public class JDBCPageProvider implements WikiPageProvider {
 
 	private final Logger log = Logger.getLogger(JDBCPageProvider.class);
 
@@ -77,12 +87,21 @@ public class JDBCPageProvider implements WikiPlugin {
         }
     }
 
+    public enum PageStatus {
+        ACTIVE("AC"), DELETED("DL");
+
+        private String dbValue;
+        PageStatus(String dbValue) {
+            this.dbValue = dbValue;
+        }
+    }
+
     public static final SQLType DEFAULT_TYPE = SQLType.MYSQL;
     public static final String DEFAULT_URL = "";
     public static final String DEFAULT_USER = "";
     public static final String DEFAULT_PASSWORD = "";
     public static final Integer DEFAULT_MAXRESULTS = 50;
-    public static final String DEFAULT_CLASS = "sql-table";
+    public static final String DEFAULT_TABLENAME = "jspwiki-page";
     public static final String DEFAULT_SQL = "select 1";
     public static final Boolean DEFAULT_HEADER = true;
     public static final String DEFAULT_SOURCE = null;
@@ -91,50 +110,45 @@ public class JDBCPageProvider implements WikiPlugin {
     private static final String PROP_URL = "jdbc.url";
     private static final String PROP_USER = "jdbc.user";
     private static final String PROP_PASSWORD = "jdbc.password";
+    private static final String PROP_TABLENAME = "jdbc.tablename";
     private static final String PROP_MAXRESULTS = "jdbc.maxresults";
-    private static final String PARAM_CLASS = "class";
-    private static final String PARAM_SQL = "sql";
-    private static final String PARAM_HEADER = "header";
     private static final String PARAM_SOURCE = "src";
+
+    public static final String COLUMN_PAGENAME="name";
+    public static final String COLUMN_VERSION="version";
+    public static final String COLUMN_TEXT="text";
+    public static final String COLUMN_AUTHOR="author";
+    public static final String COLUMN_CHANGENOTE="changenote";
+    public static final String COLUMN_STATUS="status";
 
     private SQLType sqlType = DEFAULT_TYPE;
     private String dbUrl = DEFAULT_URL;
     private String dbUser = DEFAULT_USER;
     private String dbPassword = DEFAULT_PASSWORD;
     private Integer maxResults = DEFAULT_MAXRESULTS;
-    private String className = DEFAULT_CLASS;
+
+    private String tableName = DEFAULT_TABLENAME;
     private String sql = DEFAULT_SQL;
     private Boolean header = DEFAULT_HEADER;
     private String source = DEFAULT_SOURCE;
     private DataSource ds = null;
+    private WikiEngine wikiEngine = null;
 
-	@Override
-	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
-        setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
+    @Override
+    public void initialize(WikiEngine wikiEngine, Properties properties) throws NoRequiredPropertyException, IOException {
+        setLogForDebug(properties.getProperty(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
-        WikiEngine engine = wikiContext.getEngine();
-        Properties props = engine.getWikiProperties();
+        this.wikiEngine = wikiEngine;
+        Properties props = wikiEngine.getWikiProperties();
 
         // Validate all parameters
-        validateParams(props, params);
+        validateParams(properties);
 
         Connection conn = null;
         try {
-
-            if (ds == null) {
-                if (StringUtils.isBlank(dbUser) && StringUtils.isBlank(dbPassword)) {
-                    conn = DriverManager.getConnection(dbUrl);
-                } else {
-                    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-                }
-                if (conn == null) {
-                    throw new Exception("Could not create connection for url=" + dbUrl + " user=" + dbUser);
-                }
-            } else {
-                conn = ds.getConnection();
-            }
+            conn = getConnection();
 
             sql = addLimits(sqlType,sql,maxResults);
             Statement stmt = conn.createStatement();
@@ -156,14 +170,9 @@ public class JDBCPageProvider implements WikiPlugin {
                 }
                 buffer.append("\n");
             }
-
-            log.info("result="+buffer.toString());
-            result = engine.textToHTML(wikiContext,buffer.toString());
-
-            result = "<div class='"+className+"'>"+result+"</div>";
         } catch (Exception e) {
             log.error("ERROR. "+e.getMessage()+". sql="+sql,e);
-            throw new PluginException(e.getMessage());
+            throw new IOException(e.getMessage());
         } finally {
             if (conn != null) {
                 try {
@@ -173,21 +182,47 @@ public class JDBCPageProvider implements WikiPlugin {
                 }
             }
         }
-
-		return result;
 	}
 
-    protected void validateParams(Properties props, Map<String, String> params) throws PluginException {
+    private Connection getConnection() throws Exception {
+        Connection conn = null;
+        try {
+
+            if (ds == null) {
+                if (StringUtils.isBlank(dbUser) && StringUtils.isBlank(dbPassword)) {
+                    conn = DriverManager.getConnection(dbUrl);
+                } else {
+                    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+                }
+                if (conn == null) {
+                    throw new Exception("Could not create connection for url=" + dbUrl + " user=" + dbUser);
+                }
+            } else {
+                conn = ds.getConnection();
+            }
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    // ignore
+                }
+            }
+        }
+        return conn;
+    }
+
+    protected void validateParams(Properties props) throws NoRequiredPropertyException {
         String paramName;
         String param;
 
         log.info("validateParams() START");
         paramName = PARAM_SOURCE;
-        param = params.get(paramName);
+        param = props.getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
             if (!StringUtils.isAsciiPrintable(param)) {
-                throw new PluginException(paramName + " parameter is not a valid value");
+                throw new NoRequiredPropertyException(paramName + " parameter is not a valid value",PARAM_SOURCE);
             }
             source = param;
         }
@@ -198,26 +233,26 @@ public class JDBCPageProvider implements WikiPlugin {
             try {
                 sqlType = SQLType.parse(param);
             } catch (Exception e) {
-                throw new PluginException(paramName + " property is not a valid value. " +param);
+                throw new NoRequiredPropertyException(paramName + " property is not a valid value. " +param,PROP_DRIVER);
             }
             try {
                 Class.forName(param).newInstance();
             }
             catch(ClassNotFoundException e) {
                 log.error("Error: unable to load driver class "+param+"!",e);
-                throw new PluginException("Error: unable to load driver class "+param+"!");
+                throw new NoRequiredPropertyException("Error: unable to load driver class "+param+"!",PROP_DRIVER);
             }
             catch(IllegalAccessException e) {
                 log.error("Error: access problem while loading "+param+"!",e);
-                throw new PluginException("Error: access problem while loading "+param+"!");
+                throw new NoRequiredPropertyException("Error: access problem while loading "+param+"!",PROP_DRIVER);
             }
             catch(InstantiationException e) {
                 log.error("Error: unable to instantiate driver "+param+"!",e);
-                throw new PluginException("Error: unable to instantiate driver "+param+"!");
+                throw new NoRequiredPropertyException("Error: unable to instantiate driver "+param+"!",PROP_DRIVER);
             }
             catch(Exception e) {
                 log.error("Error: unable to load driver "+param+"!",e);
-                throw new PluginException("Error: unable to load driver "+param+"! "+e.getMessage());
+                throw new NoRequiredPropertyException("Error: unable to load driver "+param+"! "+e.getMessage(),PROP_DRIVER);
             }
         } else {
             try {
@@ -225,7 +260,7 @@ public class JDBCPageProvider implements WikiPlugin {
                 ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/" + source);
             } catch (NamingException e) {
                 log.error("Neither jspwiki-custom.properties or conf/context.xml has not been configured for "+source+"!");
-                throw new PluginException("Neither jspwiki-custom.properties or conf/context.xml has not been configured for "+source+"!");
+                throw new NoRequiredPropertyException("Neither jspwiki-custom.properties or conf/context.xml has not been configured for "+source+"!",PARAM_SOURCE);
             }
         }
         if (ds == null) {
@@ -234,11 +269,11 @@ public class JDBCPageProvider implements WikiPlugin {
             if (StringUtils.isNotBlank(param)) {
                 log.info(paramName + "=" + param);
                 if (!StringUtils.isAsciiPrintable(param)) {
-                    throw new PluginException(paramName + " property is not a valid value");
+                    throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_URL);
                 }
                 if (!param.trim().startsWith(sqlType.startsWith)) {
-                    throw new PluginException("Error: " + paramName + " property has value " + param + ". " +
-                            "Expected: " + sqlType.urlDefaultPath);
+                    throw new NoRequiredPropertyException("Error: " + paramName + " property has value " + param + ". " +
+                            "Expected: " + sqlType.urlDefaultPath,PROP_URL);
                 }
                 dbUrl = param;
             }
@@ -247,7 +282,7 @@ public class JDBCPageProvider implements WikiPlugin {
             if (StringUtils.isNotBlank(param)) {
                 log.info(paramName + "=" + param);
                 if (!StringUtils.isAsciiPrintable(param)) {
-                    throw new PluginException(paramName + " property is not a valid value");
+                    throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_USER);
                 }
                 dbUser = param;
             }
@@ -256,50 +291,28 @@ public class JDBCPageProvider implements WikiPlugin {
             if (StringUtils.isNotBlank(param)) {
                 log.info(paramName + "=" + param);
                 if (!StringUtils.isAsciiPrintable(param)) {
-                    throw new PluginException(paramName + " property is not a valid value");
+                    throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_PASSWORD);
                 }
                 dbPassword = param;
             }
+        }
+        paramName = getPropKey(PROP_TABLENAME,source);
+        param = props.getProperty(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            if (!StringUtils.isAsciiPrintable(param)) {
+                throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_TABLENAME);
+            }
+            tableName = param;
         }
         paramName = getPropKey(PROP_MAXRESULTS,source);
         param = props.getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
             if (!StringUtils.isNumeric(param)) {
-                throw new PluginException(paramName + " property is not a valid value");
+                throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_MAXRESULTS);
             }
             maxResults = Integer.parseInt(param);
-        }
-        paramName = PARAM_CLASS;
-        param = params.get(paramName);
-        if (StringUtils.isNotBlank(param)) {
-            log.info(paramName + "=" + param);
-            if (!StringUtils.isAsciiPrintable(param)) {
-                throw new PluginException(paramName + " parameter is not a valid value");
-            }
-            className = param;
-        }
-        paramName = PARAM_SQL;
-        param = params.get(paramName);
-        if (StringUtils.isNotBlank(param)) {
-            log.info(paramName + "=" + param);
-            if (!StringUtils.isAsciiPrintable(param)) {
-                throw new PluginException(paramName + " parameter is not a valid value");
-            }
-            if (!sql.toLowerCase().startsWith("select")) {
-                throw new PluginException(paramName + " parameter needs to start with 'SELECT'.");
-            }
-            sql = param;
-        }
-        paramName = PARAM_HEADER;
-        param = params.get(paramName);
-        if (StringUtils.isNotBlank(param)) {
-            log.info(paramName + "=" + param);
-            if (!param.equalsIgnoreCase("true") && !param.equalsIgnoreCase("false")
-                    && !param.equals("0") && !param.equals("1")) {
-                throw new PluginException(paramName + " parameter is not a valid boolean");
-            }
-            header = Boolean.parseBoolean(param);
         }
     }
 
@@ -360,5 +373,161 @@ public class JDBCPageProvider implements WikiPlugin {
         if (StringUtils.isNotBlank(value) && (value.equalsIgnoreCase("true") || value.equals("1"))) {
             log.setLevel(Level.INFO);
         }
+    }
+
+    @Override
+    public String getProviderInfo() {
+        return "JDBCPageProvider";
+    }
+
+    @Override
+    public void putPageText( WikiPage page, String text ) throws ProviderException {
+        try {
+            Connection conn = getConnection();
+            String sql = "insert into "+getTableName()+" ("+COLUMN_PAGENAME+","+COLUMN_VERSION+","+COLUMN_TEXT+","+COLUMN_AUTHOR+","+COLUMN_STATUS+") values (?,?,?,?)";
+            String[] args = new String[] { page.getName(), String.valueOf(page.getVersion()), text, page.getAuthor() };
+            Statement stmt = conn.prepareStatement(sql, args);
+            int result = stmt.executeUpdate(sql);
+        } catch (Exception e) {
+            throw new ProviderException(e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean pageExists( String page ) {
+        try {
+            Connection conn = getConnection();
+            String sql = "select count(1) from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_STATUS+" != ? ";
+            String[] args = new String[] { page, PageStatus.DELETED.dbValue };
+            Statement stmt = conn.prepareStatement(sql, args);
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean pageExists(String page, int version) {
+        try {
+            Connection conn = getConnection();
+            String sql = "select count(1) from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ? and "+COLUMN_STATUS+" != ? ";
+            String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
+            Statement stmt = conn.prepareStatement(sql, args);
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return false;
+    }
+
+    @Override
+    public Collection findPages( QueryItem[] query ) {
+
+    }
+
+    @Override
+    public WikiPage getPageInfo( String page, int version ) throws ProviderException {
+        try {
+            Connection conn = getConnection();
+            String sql = "select * from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ? and "+COLUMN_STATUS+" != ? ";
+            String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
+            Statement stmt = conn.prepareStatement(sql, args);
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                WikiPage wikiPage = new WikiPage(wikiEngine,rs.getString(COLUMN_PAGENAME));
+                wikiPage.setAuthor(rs.getString(COLUMN_AUTHOR));
+                wikiPage.setVersion(version);
+                wikiPage.setSize(rs.getString(COLUMN_TEXT).length());
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return null;
+    }
+
+    @Override
+    public Collection getAllPages() throws ProviderException {
+        List<WikiPage> pages = new ArrayList<WikiPage>();
+        try {
+            Connection conn = getConnection();
+            String sql = "select distinct "+COLUMN_PAGENAME+" from "+getTableName()+" where "+COLUMN_STATUS+" != ?";
+            String[] args = new String[] { PageStatus.DELETED.dbValue };
+            Statement stmt = conn.prepareStatement(sql, args);
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                WikiPage wikiPage = new WikiPage(wikiEngine,rs.getString(COLUMN_PAGENAME));
+                wikiPage.setAuthor(rs.getString(COLUMN_AUTHOR));
+                wikiPage.setVersion(rs.getInt(COLUMN_VERSION));
+                wikiPage.setSize(rs.getString(COLUMN_TEXT).length());
+                pages.add(wikiPage);
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return pages;
+    }
+
+    @Override
+    public Collection getAllChangedSince( Date date ) {
+
+    }
+
+    @Override
+    public int getPageCount() throws ProviderException {
+        int result = 0;
+        try {
+            Connection conn = getConnection();
+            String sql = "select count(distinct "+COLUMN_PAGENAME+") from "+getTableName()+" where "+COLUMN_STATUS+" != ?";
+            String[] args = new String[] { PageStatus.DELETED.dbValue };
+            Statement stmt = conn.prepareStatement(sql, args);
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                result ++;
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return result;
+    }
+
+    @Override
+    public List getVersionHistory( String page ) throws ProviderException {
+
+    }
+
+    @Override
+    public String getPageText( String page, int version ) throws ProviderException {
+
+    }
+
+    @Override
+    public void deleteVersion( String pageName, int version ) throws ProviderException {
+
+    }
+
+    @Override
+    public void deletePage( String pageName ) throws ProviderException {
+
+    }
+
+
+    @Override
+    public void movePage(String from, String to) throws ProviderException {
+
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 }
