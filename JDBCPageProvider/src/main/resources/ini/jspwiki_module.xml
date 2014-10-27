@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+   <plugin class="com.digitalspider.jspwiki.plugin.JDBCPageProvider">
+       <author>DigitalSpider</author>
+       <minVersion>2.10.1</minVersion>
+   </plugin>
+</modules>
