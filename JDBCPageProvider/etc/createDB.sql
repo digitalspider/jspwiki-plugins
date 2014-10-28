@@ -1,3 +1,7 @@
+CREATE USER jspwiki WITH PASSWORD 'jspwiki';
+CREATE DATABASE jspwiki;
+GRANT ALL PRIVILEGES ON DATABASE jspwiki to jspwiki;
+
 create table jspwiki (
   id SERIAL PRIMARY KEY,
   name varchar(255) NOT NULL,
