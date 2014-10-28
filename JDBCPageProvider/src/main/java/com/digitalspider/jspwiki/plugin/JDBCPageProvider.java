@@ -31,6 +31,7 @@ import org.apache.wiki.search.QueryItem;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -412,12 +413,14 @@ public class JDBCPageProvider implements WikiPageProvider {
         Connection conn = null;
         try {
             conn = getConnection();
-            Statement stmt = conn.createStatement();
+            log.debug("executeQuery() sql=" + sql);
             if (args != null) {
-                stmt = conn.prepareStatement(sql, args);
+                PreparedStatement stmt = conn.prepareStatement(sql, args);
+                return stmt.executeQuery();
+            } else {
+                Statement stmt = conn.createStatement();
+                return stmt.executeQuery(sql);
             }
-            log.debug("executeQuery() sql="+sql);
-            return stmt.executeQuery(sql);
         } finally {
             if (conn != null) {
                 try {
@@ -433,9 +436,9 @@ public class JDBCPageProvider implements WikiPageProvider {
         Connection conn = null;
         try {
             conn = getConnection();
-            Statement stmt = conn.prepareStatement(sql, args);
+            PreparedStatement stmt = conn.prepareStatement(sql, args);
             log.debug("executeUpdate() sql="+sql);
-            int result = stmt.executeUpdate(sql);
+            int result = stmt.executeUpdate();
             log.debug("result="+result);
             return result;
         } finally {
@@ -464,7 +467,7 @@ public class JDBCPageProvider implements WikiPageProvider {
             return version;
         }
         try {
-            String sql = "select * from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_STATUS+" != ? order by "+COLUMN_VERSION+" DESC";
+            String sql = "select * from "+getTableName()+" where "+COLUMN_PAGENAME+" = '?' and "+COLUMN_STATUS+" != '?' order by "+COLUMN_VERSION+" DESC";
             String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
             ResultSet rs = executeQuery(sql,args);
             if (rs.next()) {
@@ -483,24 +486,28 @@ public class JDBCPageProvider implements WikiPageProvider {
     @Override
     public void putPageText( WikiPage page, String text ) throws ProviderException {
         try {
+            String changenote = "new page";
+            if (page.getAttribute(WikiPage.CHANGENOTE) != null) {
+                changenote = page.getAttribute(WikiPage.CHANGENOTE).toString();
+            }
             if (isVersioned) {
                 int latest = findLatestVersion( page.getName() );
                 if (pageExists(page.getName(), latest)) {
                     latest++;
                 }
-                String sql = "insert into " + getTableName() + " (" + COLUMN_PAGENAME + "," + COLUMN_VERSION + "," + COLUMN_TEXT + "," + COLUMN_AUTHOR + "," + COLUMN_CHANGENOTE + "," + COLUMN_STATUS + ") values (?,?,?,?,?,?)";
-                String[] args = new String[]{page.getName(), String.valueOf(latest), text, page.getAuthor(), (String) page.getAttribute(WikiPage.CHANGENOTE), PageStatus.ACTIVE.dbValue};
+                String sql = "insert into " + getTableName() + " (" + COLUMN_PAGENAME + "," + COLUMN_VERSION + "," + COLUMN_TEXT + "," + COLUMN_AUTHOR + "," + COLUMN_CHANGENOTE + "," + COLUMN_STATUS + ") values ('?',','?','?','?','?')";
+                String[] args = new String[]{page.getName(), String.valueOf(latest), text, page.getAuthor(), changenote, PageStatus.ACTIVE.dbValue};
                 int result = executeUpdate(sql,args);
             }
             else {
                 int latest = -1;
                 if (pageExists(page.getName(), latest)) {
-                    String sql = "update " + getTableName() + " set " + COLUMN_TEXT + "=?, " + COLUMN_AUTHOR + "=?, " + COLUMN_CHANGENOTE + "=?, " + COLUMN_STATUS + "=? where " + COLUMN_PAGENAME + "=?, " + COLUMN_VERSION + "=?";
-                    String[] args = new String[]{text, page.getAuthor(), (String) page.getAttribute(WikiPage.CHANGENOTE), PageStatus.ACTIVE.dbValue, page.getName(), "-1"};
+                    String sql = "update " + getTableName() + " set " + COLUMN_TEXT + "='?', " + COLUMN_AUTHOR + "='?', " + COLUMN_CHANGENOTE + "='?', " + COLUMN_STATUS + "='?' where " + COLUMN_PAGENAME + "='?', " + COLUMN_VERSION + "=?";
+                    String[] args = new String[]{text, page.getAuthor(), changenote, PageStatus.ACTIVE.dbValue, page.getName(), "-1"};
                     int result = executeUpdate(sql,args);
                 } else {
-                    String sql = "insert into " + getTableName() + " (" + COLUMN_PAGENAME + "," + COLUMN_VERSION + "," + COLUMN_TEXT + "," + COLUMN_AUTHOR + "," + COLUMN_CHANGENOTE + "," + COLUMN_STATUS + ") values (?,?,?,?,?,?)";
-                    String[] args = new String[]{page.getName(), String.valueOf(latest), text, page.getAuthor(), (String) page.getAttribute(WikiPage.CHANGENOTE), PageStatus.ACTIVE.dbValue};
+                    String sql = "insert into " + getTableName() + " (" + COLUMN_PAGENAME + "," + COLUMN_VERSION + "," + COLUMN_TEXT + "," + COLUMN_AUTHOR + "," + COLUMN_CHANGENOTE + "," + COLUMN_STATUS + ") values ('?',?,'?','?','?','?')";
+                    String[] args = new String[]{page.getName(), String.valueOf(latest), text, page.getAuthor(), changenote, PageStatus.ACTIVE.dbValue};
                     int result = executeUpdate(sql,args);
                 }
             }
@@ -524,7 +531,7 @@ public class JDBCPageProvider implements WikiPageProvider {
     @Override
     public boolean pageExists(String page, int version) {
         try {
-            String sql = "select count(1) from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ? and "+COLUMN_STATUS+" != ? ";
+            String sql = "select count(1) from "+getTableName()+" where "+COLUMN_PAGENAME+" = '?' and "+COLUMN_VERSION+" = '?' and "+COLUMN_STATUS+" != '?' ";
             String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
             ResultSet rs = executeQuery(sql,args);
             if (rs.next()) {
@@ -542,7 +549,7 @@ public class JDBCPageProvider implements WikiPageProvider {
     @Override
     public WikiPage getPageInfo( String page, int version ) throws ProviderException {
         try {
-            String sql = "select * from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ? and "+COLUMN_STATUS+" != ? ";
+            String sql = "select * from "+getTableName()+" where "+COLUMN_PAGENAME+" = '?' and "+COLUMN_VERSION+" = '?' and "+COLUMN_STATUS+" != '?' ";
             String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
             ResultSet rs = executeQuery(sql,args);
             if (rs.next()) {
@@ -567,7 +574,7 @@ public class JDBCPageProvider implements WikiPageProvider {
         List<WikiPage> pages = new ArrayList<WikiPage>();
         try {
             if (query.length >0 && StringUtils.isNotBlank(query[0].word)) {
-                String sql = "select distinct " + COLUMN_PAGENAME + " from " + getTableName() + " where " + COLUMN_TEXT + " like '%" + query[0].word + "%' and " + COLUMN_STATUS + " != ?";
+                String sql = "select distinct " + COLUMN_PAGENAME + " from " + getTableName() + " where " + COLUMN_TEXT + " like '%" + query[0].word + "%' and " + COLUMN_STATUS + " != '?'";
                 sql = addLimits(sqlType,sql,maxResults);
                 String[] args = new String[]{PageStatus.DELETED.dbValue};
                 ResultSet rs = executeQuery(sql,args);
@@ -590,7 +597,7 @@ public class JDBCPageProvider implements WikiPageProvider {
     public Collection getAllPages() throws ProviderException {
         List<WikiPage> pages = new ArrayList<WikiPage>();
         try {
-            String sql = "select distinct "+COLUMN_PAGENAME+" from "+getTableName()+" where "+COLUMN_STATUS+" != ?";
+            String sql = "select distinct "+COLUMN_PAGENAME+" from "+getTableName()+" where "+COLUMN_STATUS+" != '?'";
             sql = addLimits(sqlType,sql,maxResults);
             String[] args = new String[] { PageStatus.DELETED.dbValue };
             ResultSet rs = executeQuery(sql,args);
@@ -612,7 +619,7 @@ public class JDBCPageProvider implements WikiPageProvider {
     public Collection getAllChangedSince( Date date ) {
         List<WikiPage> pages = new ArrayList<WikiPage>();
         try {
-            String sql = "select distinct "+COLUMN_PAGENAME+" from "+getTableName()+" where "+COLUMN_LASTMODIFIED+" >= "+date+" and "+COLUMN_STATUS+" != ?";
+            String sql = "select distinct "+COLUMN_PAGENAME+" from "+getTableName()+" where "+COLUMN_LASTMODIFIED+" >= '"+date+"' and "+COLUMN_STATUS+" != '?'";
             sql = addLimits(sqlType,sql,maxResults);
             String[] args = new String[] { PageStatus.DELETED.dbValue };
             ResultSet rs = executeQuery(sql,args);
@@ -684,7 +691,7 @@ public class JDBCPageProvider implements WikiPageProvider {
     @Override
     public void deleteVersion( String pageName, int version ) throws ProviderException {
         try {
-            String sql = "update "+getTableName()+" set "+COLUMN_STATUS+" = ? where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ?";
+            String sql = "update "+getTableName()+" set "+COLUMN_STATUS+" = '?' where "+COLUMN_PAGENAME+" = '?' and "+COLUMN_VERSION+" = '?'";
             String[] args = new String[] { PageStatus.DELETED.dbValue, pageName, String.valueOf(version) };
             int result = executeUpdate(sql,args);
         } catch (Exception e) {
@@ -698,7 +705,7 @@ public class JDBCPageProvider implements WikiPageProvider {
     @Override
     public void deletePage( String pageName ) throws ProviderException {
         try {
-            String sql = "update "+getTableName()+" set "+COLUMN_STATUS+" = ? where "+COLUMN_PAGENAME+" = ?";
+            String sql = "update "+getTableName()+" set "+COLUMN_STATUS+" = '?' where "+COLUMN_PAGENAME+" = '?'";
             String[] args = new String[] { PageStatus.DELETED.dbValue, pageName };
             int result = executeUpdate(sql,args);
         } catch (Exception e) {
@@ -715,7 +722,7 @@ public class JDBCPageProvider implements WikiPageProvider {
             throw new ProviderException("The destination page "+to+" already exists");
         }
         try {
-            String sql = "update "+getTableName()+" set "+COLUMN_PAGENAME+" = ? where "+COLUMN_PAGENAME+" = ?";
+            String sql = "update "+getTableName()+" set "+COLUMN_PAGENAME+" = '?' where "+COLUMN_PAGENAME+" = '?'";
             String[] args = new String[] { to, from };
             int result = executeUpdate(sql,args);
         } catch (Exception e) {
