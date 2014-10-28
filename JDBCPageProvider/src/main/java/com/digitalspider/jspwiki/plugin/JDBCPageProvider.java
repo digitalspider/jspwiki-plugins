@@ -89,7 +89,7 @@ public class JDBCPageProvider implements WikiPageProvider {
     public static final String DEFAULT_USER = "";
     public static final String DEFAULT_PASSWORD = "";
     public static final Integer DEFAULT_MAXRESULTS = 500;
-    public static final String DEFAULT_TABLENAME = "jspwiki-page";
+    public static final String DEFAULT_TABLENAME = "jspwiki";
     public static final Boolean DEFAULT_VERSIONING = false;
     public static final Boolean DEFAULT_C3P0 = false;
     public static final Integer DEFAULT_C3P0_MINPOOLSIZE = 5;
@@ -314,7 +314,7 @@ public class JDBCPageProvider implements WikiPageProvider {
         }
     }
 
-    private void initialiseConnectionPool() throws SQLException {
+    protected void initialiseConnectionPool() throws SQLException {
         cpds = new ComboPooledDataSource();
         try {
             cpds.setDriverClass(sqlType.driverClass);
