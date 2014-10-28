@@ -44,6 +44,8 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: commons-logging:commons-logging:1.0.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: nekohtml:nekohtml:0.9.5" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: xerces:xercesImpl:2.4.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: com.mchange:c3p0:0.9.5-pre9" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: com.mchange:mchange-commons-java:0.2.8" level="project" />
   </component>
 </module>
 

@@ -15,41 +15,29 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.PageManager;
-import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiPage;
 import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
-import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.exceptions.ProviderException;
-import org.apache.wiki.api.plugin.WikiPlugin;
-import org.apache.wiki.parser.JSPWikiMarkupParser;
-import org.apache.wiki.parser.WikiDocument;
-import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.providers.WikiPageProvider;
-import org.apache.wiki.render.XHTMLRenderer;
 import org.apache.wiki.search.QueryItem;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.naming.Context;
@@ -100,10 +88,13 @@ public class JDBCPageProvider implements WikiPageProvider {
     public static final String DEFAULT_URL = "";
     public static final String DEFAULT_USER = "";
     public static final String DEFAULT_PASSWORD = "";
-    public static final Integer DEFAULT_MAXRESULTS = 50;
+    public static final Integer DEFAULT_MAXRESULTS = 500;
     public static final String DEFAULT_TABLENAME = "jspwiki-page";
-    public static final String DEFAULT_SQL = "select 1";
-    public static final Boolean DEFAULT_HEADER = true;
+    public static final Boolean DEFAULT_VERSIONING = false;
+    public static final Boolean DEFAULT_C3P0 = false;
+    public static final Integer DEFAULT_C3P0_MINPOOLSIZE = 5;
+    public static final Integer DEFAULT_C3P0_INCREMENT = 5;
+    public static final Integer DEFAULT_C3P0_MAXPOOLSIZE = 40;
     public static final String DEFAULT_SOURCE = null;
 
     private static final String PROP_DRIVER = "jdbc.driver";
@@ -112,24 +103,34 @@ public class JDBCPageProvider implements WikiPageProvider {
     private static final String PROP_PASSWORD = "jdbc.password";
     private static final String PROP_TABLENAME = "jdbc.tablename";
     private static final String PROP_MAXRESULTS = "jdbc.maxresults";
+    private static final String PROP_VERSIONING = "jdbc.versioning";
+    private static final String PROP_C3P0 = "jdbc.c3p0";
+    private static final String PROP_C3P0_MINPOOLSIZE = "jdbc.c3p0.minpoolsize";
+    private static final String PROP_C3P0_INCREMENT = "jdbc.c3p0.increment";
+    private static final String PROP_C3P0_MAXPOOLSIZE = "jdbc.c3p0.maxpoolsize";
     private static final String PARAM_SOURCE = "src";
 
+    public static final String COLUMN_ID="id";
     public static final String COLUMN_PAGENAME="name";
     public static final String COLUMN_VERSION="version";
     public static final String COLUMN_TEXT="text";
     public static final String COLUMN_AUTHOR="author";
     public static final String COLUMN_CHANGENOTE="changenote";
+    public static final String COLUMN_LASTMODIFIED="lastmodified";
     public static final String COLUMN_STATUS="status";
 
+    private ComboPooledDataSource cpds = null;
     private SQLType sqlType = DEFAULT_TYPE;
     private String dbUrl = DEFAULT_URL;
     private String dbUser = DEFAULT_USER;
     private String dbPassword = DEFAULT_PASSWORD;
     private Integer maxResults = DEFAULT_MAXRESULTS;
-
     private String tableName = DEFAULT_TABLENAME;
-    private String sql = DEFAULT_SQL;
-    private Boolean header = DEFAULT_HEADER;
+    private Boolean isVersioned = DEFAULT_VERSIONING;
+    private Boolean c3p0 = DEFAULT_C3P0;
+    private Integer c3p0MinPoolSize = DEFAULT_C3P0_MINPOOLSIZE;
+    private Integer c3p0Increment = DEFAULT_C3P0_INCREMENT;
+    private Integer c3p0MaxPoolSize = DEFAULT_C3P0_MAXPOOLSIZE;
     private String source = DEFAULT_SOURCE;
     private DataSource ds = null;
     private WikiEngine wikiEngine = null;
@@ -138,79 +139,25 @@ public class JDBCPageProvider implements WikiPageProvider {
     public void initialize(WikiEngine wikiEngine, Properties properties) throws NoRequiredPropertyException, IOException {
         setLogForDebug(properties.getProperty(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
-        String result = "";
-        StringBuffer buffer = new StringBuffer();
         this.wikiEngine = wikiEngine;
-        Properties props = wikiEngine.getWikiProperties();
 
         // Validate all parameters
         validateParams(properties);
 
-        Connection conn = null;
+        String sql = "select 1";
         try {
-            conn = getConnection();
-
-            sql = addLimits(sqlType,sql,maxResults);
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-
-            ResultSetMetaData md = rs.getMetaData();
-            if (header) {
-                for (int i = 0; i < md.getColumnCount(); i++) {
-                    String header = md.getColumnLabel(i + 1);
-                    buffer.append("|| " + header);
-                }
-                buffer.append("\n");
+            if (c3p0) {
+                initialiseConnectionPool();
             }
-
-            while (rs.next()) {
-                for (int i=0; i<md.getColumnCount(); i++) {
-                    String value = rs.getString(i+1);
-                    buffer.append("| "+value);
-                }
-                buffer.append("\n");
+            ResultSet rs = executeQuery(sql,null);
+            if (rs.next()) {
+                log.info("Successfully initialised JDBCPageProvider");
             }
         } catch (Exception e) {
             log.error("ERROR. "+e.getMessage()+". sql="+sql,e);
             throw new IOException(e.getMessage());
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    // ignore
-                }
-            }
         }
 	}
-
-    private Connection getConnection() throws Exception {
-        Connection conn = null;
-        try {
-
-            if (ds == null) {
-                if (StringUtils.isBlank(dbUser) && StringUtils.isBlank(dbPassword)) {
-                    conn = DriverManager.getConnection(dbUrl);
-                } else {
-                    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-                }
-                if (conn == null) {
-                    throw new Exception("Could not create connection for url=" + dbUrl + " user=" + dbUser);
-                }
-            } else {
-                conn = ds.getConnection();
-            }
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    // ignore
-                }
-            }
-        }
-        return conn;
-    }
 
     protected void validateParams(Properties props) throws NoRequiredPropertyException {
         String paramName;
@@ -296,7 +243,7 @@ public class JDBCPageProvider implements WikiPageProvider {
                 dbPassword = param;
             }
         }
-        paramName = getPropKey(PROP_TABLENAME,source);
+        paramName = getPropKey(PROP_TABLENAME, source);
         param = props.getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -305,7 +252,7 @@ public class JDBCPageProvider implements WikiPageProvider {
             }
             tableName = param;
         }
-        paramName = getPropKey(PROP_MAXRESULTS,source);
+        paramName = getPropKey(PROP_MAXRESULTS, source);
         param = props.getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -314,6 +261,73 @@ public class JDBCPageProvider implements WikiPageProvider {
             }
             maxResults = Integer.parseInt(param);
         }
+        paramName = getPropKey(PROP_VERSIONING, source);
+        param = props.getProperty(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            log.info(paramName + "=" + param);
+            try {
+                Boolean paramValue = Boolean.parseBoolean(param);
+                isVersioned = paramValue;
+            } catch (Exception e) {
+                throw new NoRequiredPropertyException(paramName+" parameter is not true or false",PROP_MAXRESULTS);
+            }
+        }
+        paramName = getPropKey(PROP_C3P0, source);
+        param = props.getProperty(paramName);
+        if (StringUtils.isNotBlank(param)) {
+            try {
+                Boolean paramValue = Boolean.parseBoolean(param);
+                c3p0 = paramValue;
+            } catch (Exception e) {
+                throw new NoRequiredPropertyException(paramName+" parameter is not true or false",PROP_C3P0);
+            }
+
+            paramName = getPropKey(PROP_C3P0_MINPOOLSIZE, source);
+            param = props.getProperty(paramName);
+            if (StringUtils.isNotBlank(param)) {
+                log.info(paramName + "=" + param);
+                if (!StringUtils.isNumeric(param)) {
+                    throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_C3P0_MINPOOLSIZE);
+                }
+                c3p0MinPoolSize = Integer.parseInt(param);
+            }
+
+            paramName = getPropKey(PROP_C3P0_INCREMENT, source);
+            param = props.getProperty(paramName);
+            if (StringUtils.isNotBlank(param)) {
+                log.info(paramName + "=" + param);
+                if (!StringUtils.isNumeric(param)) {
+                    throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_C3P0_INCREMENT);
+                }
+                c3p0Increment = Integer.parseInt(param);
+            }
+
+            paramName = getPropKey(PROP_C3P0_MAXPOOLSIZE, source);
+            param = props.getProperty(paramName);
+            if (StringUtils.isNotBlank(param)) {
+                log.info(paramName + "=" + param);
+                if (!StringUtils.isNumeric(param)) {
+                    throw new NoRequiredPropertyException(paramName + " property is not a valid value",PROP_C3P0_MAXPOOLSIZE);
+                }
+                c3p0MaxPoolSize = Integer.parseInt(param);
+            }
+        }
+    }
+
+    private void initialiseConnectionPool() throws SQLException {
+        cpds = new ComboPooledDataSource();
+        try {
+            cpds.setDriverClass(sqlType.driverClass);
+        } catch (Exception e) {
+            throw new SQLException(e);
+        }
+        cpds.setJdbcUrl( dbUrl );
+        cpds.setUser(dbUser);
+        cpds.setPassword(dbPassword);
+
+        cpds.setMinPoolSize(c3p0MinPoolSize);
+        cpds.setAcquireIncrement(c3p0Increment);
+        cpds.setMaxPoolSize(c3p0MaxPoolSize);
     }
 
     private String addLimits(SQLType sqlType, String sql, Integer maxResults) {
@@ -375,49 +389,144 @@ public class JDBCPageProvider implements WikiPageProvider {
         }
     }
 
+    private Connection getConnection() throws SQLException {
+        Connection conn = null;
+        if (ds != null) {
+            conn = ds.getConnection();
+        } else if (c3p0 && cpds != null) {
+            conn = cpds.getConnection();
+        } else {
+            if (StringUtils.isBlank(dbUser) && StringUtils.isBlank(dbPassword)) {
+                conn = DriverManager.getConnection(dbUrl);
+            } else {
+                conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+            }
+            if (conn == null) {
+                throw new SQLException("Could not create connection for url=" + dbUrl + " user=" + dbUser);
+            }
+        }
+        return conn;
+    }
+
+    private ResultSet executeQuery(String sql, String[] args) throws SQLException {
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            Statement stmt = conn.createStatement();
+            if (args != null) {
+                stmt = conn.prepareStatement(sql, args);
+            }
+            log.debug("executeQuery() sql="+sql);
+            return stmt.executeQuery(sql);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    log.error(e,e);
+                }
+            }
+        }
+    }
+
+    private int executeUpdate(String sql, String[] args) throws SQLException {
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            Statement stmt = conn.prepareStatement(sql, args);
+            log.debug("executeUpdate() sql="+sql);
+            int result = stmt.executeUpdate(sql);
+            log.debug("result="+result);
+            return result;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    log.error(e,e);
+                }
+            }
+        }
+    }
+
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public String getProviderInfo() {
         return "JDBCPageProvider";
     }
 
+    private int findLatestVersion( String page )
+    {
+        int version = -1;
+        if (!isVersioned) {
+            return version;
+        }
+        try {
+            String sql = "select * from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_STATUS+" != ? order by "+COLUMN_VERSION+" DESC";
+            String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
+            ResultSet rs = executeQuery(sql,args);
+            if (rs.next()) {
+                version = rs.getInt(COLUMN_VERSION);
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+
+        return version;
+    }
+
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public void putPageText( WikiPage page, String text ) throws ProviderException {
         try {
-            Connection conn = getConnection();
-            String sql = "insert into "+getTableName()+" ("+COLUMN_PAGENAME+","+COLUMN_VERSION+","+COLUMN_TEXT+","+COLUMN_AUTHOR+","+COLUMN_STATUS+") values (?,?,?,?)";
-            String[] args = new String[] { page.getName(), String.valueOf(page.getVersion()), text, page.getAuthor() };
-            Statement stmt = conn.prepareStatement(sql, args);
-            int result = stmt.executeUpdate(sql);
+            if (isVersioned) {
+                int latest = findLatestVersion( page.getName() );
+                if (pageExists(page.getName(), latest)) {
+                    latest++;
+                }
+                String sql = "insert into " + getTableName() + " (" + COLUMN_PAGENAME + "," + COLUMN_VERSION + "," + COLUMN_TEXT + "," + COLUMN_AUTHOR + "," + COLUMN_CHANGENOTE + "," + COLUMN_STATUS + ") values (?,?,?,?,?,?)";
+                String[] args = new String[]{page.getName(), String.valueOf(latest), text, page.getAuthor(), (String) page.getAttribute(WikiPage.CHANGENOTE), PageStatus.ACTIVE.dbValue};
+                int result = executeUpdate(sql,args);
+            }
+            else {
+                int latest = -1;
+                if (pageExists(page.getName(), latest)) {
+                    String sql = "update " + getTableName() + " set " + COLUMN_TEXT + "=?, " + COLUMN_AUTHOR + "=?, " + COLUMN_CHANGENOTE + "=?, " + COLUMN_STATUS + "=? where " + COLUMN_PAGENAME + "=?, " + COLUMN_VERSION + "=?";
+                    String[] args = new String[]{text, page.getAuthor(), (String) page.getAttribute(WikiPage.CHANGENOTE), PageStatus.ACTIVE.dbValue, page.getName(), "-1"};
+                    int result = executeUpdate(sql,args);
+                } else {
+                    String sql = "insert into " + getTableName() + " (" + COLUMN_PAGENAME + "," + COLUMN_VERSION + "," + COLUMN_TEXT + "," + COLUMN_AUTHOR + "," + COLUMN_CHANGENOTE + "," + COLUMN_STATUS + ") values (?,?,?,?,?,?)";
+                    String[] args = new String[]{page.getName(), String.valueOf(latest), text, page.getAuthor(), (String) page.getAttribute(WikiPage.CHANGENOTE), PageStatus.ACTIVE.dbValue};
+                    int result = executeUpdate(sql,args);
+                }
+            }
         } catch (Exception e) {
             throw new ProviderException(e.getMessage());
         }
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public boolean pageExists( String page ) {
-        try {
-            Connection conn = getConnection();
-            String sql = "select count(1) from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_STATUS+" != ? ";
-            String[] args = new String[] { page, PageStatus.DELETED.dbValue };
-            Statement stmt = conn.prepareStatement(sql, args);
-            ResultSet rs = stmt.executeQuery(sql);
-            if (rs.next()) {
-                return true;
-            }
-        } catch (Exception e) {
-            log.error(e,e);
-        }
-        return false;
+        int version = findLatestVersion( page );
+        return pageExists( page, version );
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public boolean pageExists(String page, int version) {
         try {
-            Connection conn = getConnection();
             String sql = "select count(1) from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ? and "+COLUMN_STATUS+" != ? ";
             String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
-            Statement stmt = conn.prepareStatement(sql, args);
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = executeQuery(sql,args);
             if (rs.next()) {
                 return true;
             }
@@ -427,24 +536,22 @@ public class JDBCPageProvider implements WikiPageProvider {
         return false;
     }
 
-    @Override
-    public Collection findPages( QueryItem[] query ) {
-
-    }
-
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public WikiPage getPageInfo( String page, int version ) throws ProviderException {
         try {
-            Connection conn = getConnection();
             String sql = "select * from "+getTableName()+" where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ? and "+COLUMN_STATUS+" != ? ";
             String[] args = new String[] { page, String.valueOf(version), PageStatus.DELETED.dbValue };
-            Statement stmt = conn.prepareStatement(sql, args);
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = executeQuery(sql,args);
             if (rs.next()) {
                 WikiPage wikiPage = new WikiPage(wikiEngine,rs.getString(COLUMN_PAGENAME));
                 wikiPage.setAuthor(rs.getString(COLUMN_AUTHOR));
                 wikiPage.setVersion(version);
                 wikiPage.setSize(rs.getString(COLUMN_TEXT).length());
+                wikiPage.setAttribute( WikiPage.CHANGENOTE, rs.getString(COLUMN_CHANGENOTE) );
+                wikiPage.setLastModified(rs.getDate(COLUMN_LASTMODIFIED));
             }
         } catch (Exception e) {
             log.error(e,e);
@@ -452,20 +559,44 @@ public class JDBCPageProvider implements WikiPageProvider {
         return null;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
+    @Override
+    public Collection findPages( QueryItem[] query ) {
+        List<WikiPage> pages = new ArrayList<WikiPage>();
+        try {
+            if (query.length >0 && StringUtils.isNotBlank(query[0].word)) {
+                String sql = "select distinct " + COLUMN_PAGENAME + " from " + getTableName() + " where " + COLUMN_TEXT + " like '%" + query[0].word + "%' and " + COLUMN_STATUS + " != ?";
+                sql = addLimits(sqlType,sql,maxResults);
+                String[] args = new String[]{PageStatus.DELETED.dbValue};
+                ResultSet rs = executeQuery(sql,args);
+                while (rs.next()) {
+                    String pageName = rs.getString(COLUMN_PAGENAME);
+                    WikiPage wikiPage = getPageInfo(pageName, findLatestVersion(pageName));
+                    pages.add(wikiPage);
+                }
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return pages;
+    }
+
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public Collection getAllPages() throws ProviderException {
         List<WikiPage> pages = new ArrayList<WikiPage>();
         try {
-            Connection conn = getConnection();
             String sql = "select distinct "+COLUMN_PAGENAME+" from "+getTableName()+" where "+COLUMN_STATUS+" != ?";
+            sql = addLimits(sqlType,sql,maxResults);
             String[] args = new String[] { PageStatus.DELETED.dbValue };
-            Statement stmt = conn.prepareStatement(sql, args);
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = executeQuery(sql,args);
             while (rs.next()) {
-                WikiPage wikiPage = new WikiPage(wikiEngine,rs.getString(COLUMN_PAGENAME));
-                wikiPage.setAuthor(rs.getString(COLUMN_AUTHOR));
-                wikiPage.setVersion(rs.getInt(COLUMN_VERSION));
-                wikiPage.setSize(rs.getString(COLUMN_TEXT).length());
+                String pageName = rs.getString(COLUMN_PAGENAME);
+                WikiPage wikiPage = getPageInfo( pageName, findLatestVersion(pageName) );
                 pages.add(wikiPage);
             }
         } catch (Exception e) {
@@ -474,20 +605,38 @@ public class JDBCPageProvider implements WikiPageProvider {
         return pages;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public Collection getAllChangedSince( Date date ) {
-
+        List<WikiPage> pages = new ArrayList<WikiPage>();
+        try {
+            String sql = "select distinct "+COLUMN_PAGENAME+" from "+getTableName()+" where "+COLUMN_LASTMODIFIED+" >= "+date+" and "+COLUMN_STATUS+" != ?";
+            sql = addLimits(sqlType,sql,maxResults);
+            String[] args = new String[] { PageStatus.DELETED.dbValue };
+            ResultSet rs = executeQuery(sql,args);
+            while (rs.next()) {
+                String pageName = rs.getString(COLUMN_PAGENAME);
+                WikiPage wikiPage = getPageInfo( pageName, findLatestVersion(pageName) );
+                pages.add(wikiPage);
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return pages;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public int getPageCount() throws ProviderException {
         int result = 0;
         try {
-            Connection conn = getConnection();
             String sql = "select count(distinct "+COLUMN_PAGENAME+") from "+getTableName()+" where "+COLUMN_STATUS+" != ?";
             String[] args = new String[] { PageStatus.DELETED.dbValue };
-            Statement stmt = conn.prepareStatement(sql, args);
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = executeQuery(sql,args);
             while (rs.next()) {
                 result ++;
             }
@@ -497,30 +646,81 @@ public class JDBCPageProvider implements WikiPageProvider {
         return result;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public List getVersionHistory( String page ) throws ProviderException {
-
+        List<WikiPage> versionHistory = new ArrayList<WikiPage>();
+        try {
+            int version = findLatestVersion( page );
+            while (version >= 0) {
+                WikiPage wikiPage = getPageInfo( page, version );
+                versionHistory.add(wikiPage);
+                version--;
+            }
+            if (version == -1) {
+                WikiPage wikiPage = getPageInfo( page, version );
+                versionHistory.add(wikiPage);
+            }
+        } catch (Exception e) {
+            log.error(e,e);
+        }
+        return versionHistory;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public String getPageText( String page, int version ) throws ProviderException {
-
+        WikiPage wikiPage = getPageInfo( page, version );
+        return wikiPage.getWiki();
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public void deleteVersion( String pageName, int version ) throws ProviderException {
-
+        try {
+            String sql = "update "+getTableName()+" set "+COLUMN_STATUS+" = ? where "+COLUMN_PAGENAME+" = ? and "+COLUMN_VERSION+" = ?";
+            String[] args = new String[] { PageStatus.DELETED.dbValue, pageName, String.valueOf(version) };
+            int result = executeUpdate(sql,args);
+        } catch (Exception e) {
+            log.error(e,e);
+        }
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public void deletePage( String pageName ) throws ProviderException {
-
+        try {
+            String sql = "update "+getTableName()+" set "+COLUMN_STATUS+" = ? where "+COLUMN_PAGENAME+" = ?";
+            String[] args = new String[] { PageStatus.DELETED.dbValue, pageName };
+            int result = executeUpdate(sql,args);
+        } catch (Exception e) {
+            log.error(e,e);
+        }
     }
 
-
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public void movePage(String from, String to) throws ProviderException {
-
+        if (pageExists(to)) {
+            throw new ProviderException("The destination page "+to+" already exists");
+        }
+        try {
+            String sql = "update "+getTableName()+" set "+COLUMN_PAGENAME+" = ? where "+COLUMN_PAGENAME+" = ?";
+            String[] args = new String[] { to, from };
+            int result = executeUpdate(sql,args);
+        } catch (Exception e) {
+            log.error(e,e);
+        }
     }
 
     public String getTableName() {

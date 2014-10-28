@@ -22,6 +22,12 @@
       <classifier>classes</classifier>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.mchange</groupId>
+      <artifactId>c3p0</artifactId>
+      <version>0.9.5-pre9</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -40,6 +46,11 @@
                 -->
                 <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="dist/${project.artifactId}-${project.version}.${project.packaging}"/>
                 <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="${tomcat-home}/webapps/JSPWiki/WEB-INF/lib/${project.artifactId}-${project.version}.${project.packaging}"/>
+
+                <zip destfile="dist/${project.artifactId}.zip" basedir="etc" includes="*.jar*"></zip>
+                <copy todir="${tomcat-home}/webapps/JSPWiki/WEB-INF/lib/">
+                    <fileset dir="etc" includes="*.jar"/>
+                </copy>
               </tasks>
             </configuration>
             <goals>
