@@ -59,4 +59,14 @@ public class AutoLinkHtmlFilterTest extends TestCase {
         linkedHtmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.LINKED_REGEX_HTML);
         assertEquals(5,linkedHtmlStrings.size());
     }
+
+    public void testFindURLInEmbeddedPlugin() {
+        String content = "This is a [{ImageGallery url=http://www.smh.com.au/ items=3 width=900 steps=3 autoplay=2000 speed=200 arrows=true nav=true sortby=name sortdesc=true}] embedded plugin with http://test.com parameters";
+
+        Collection<String> htmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML);
+        //System.out.println("htmlStrings="+htmlStrings);
+        assertEquals(1, htmlStrings.size());
+        assertTrue(htmlStrings.contains("http://test.com"));
+        assertFalse(htmlStrings.contains("http://www.smh.com.au"));
+    }
 }

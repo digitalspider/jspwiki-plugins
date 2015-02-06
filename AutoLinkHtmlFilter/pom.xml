@@ -6,7 +6,7 @@
   <groupId>com.digitalspider.jspwiki.filter</groupId>
   <artifactId>AutoLinkHtmlFilter</artifactId>
   <packaging>jar</packaging>
-  <version>0.1</version>
+  <version>0.2-SNAPSHOT</version>
   <name>AutoLinkHtmlFilter</name>
   <dependencies>
     <dependency>

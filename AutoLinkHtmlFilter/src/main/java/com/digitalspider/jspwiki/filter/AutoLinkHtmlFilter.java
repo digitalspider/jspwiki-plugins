@@ -50,14 +50,16 @@ public class AutoLinkHtmlFilter extends BasicPageFilter {
 	private static final Logger log = Logger.getLogger(AutoLinkHtmlFilter.class);
 
     public static final String REGEX_HTML = "(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]";
-    public static final String LINKED_REGEX_HTML = "(\\||\\[)(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
+    public static final String REGEX_HTML_LINKED = "(\\||\\[)(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
+    public static final String REGEX_HTML_PLUGIN_BODY= "\\[\\{[a-zA-Z0-9+&@#/%?='~_|!:,.; \n]*\\}\\]";
+    public static final String REGEX_HTML_PLUGIN_LINE = "\\[\\{[a-zA-Z0-9+&@#/%?='~_|!:,.; ]*\\}\\]";
 
     @Override
     public String preSave(WikiContext wikiContext, String content) throws FilterException {
         content = super.preSave(wikiContext,content);
         log.info("content="+content);
         Collection<String> htmlStrings = findByRegex(content,REGEX_HTML);
-        Collection<String> linkedHtmlStrings = findByRegex(content,LINKED_REGEX_HTML);
+        Collection<String> linkedHtmlStrings = findByRegex(content,REGEX_HTML_LINKED);
         linkedHtmlStrings = AutoLinkHtmlFilter.getUnlinkedCollection(linkedHtmlStrings);
         htmlStrings = AutoLinkHtmlFilter.removeAll(htmlStrings, linkedHtmlStrings);
 
@@ -71,7 +73,7 @@ public class AutoLinkHtmlFilter extends BasicPageFilter {
         String patternString = regex;
         log.debug("patternString="+patternString);
         Pattern pattern = Pattern.compile(patternString);
-        Matcher matcher = pattern.matcher(data);
+        Matcher matcher = pattern.matcher(removePluginContent(data,true));
         Collection<String> results = new HashSet<String>();
         while (matcher.find()) {
             String result = matcher.group();
@@ -79,6 +81,18 @@ public class AutoLinkHtmlFilter extends BasicPageFilter {
             results.add(result);
         }
         return results;
+    }
+
+    public static String removePluginContent(String data, boolean includeBody) {
+	String regex = (includeBody) ? REGEX_HTML_PLUGIN_BODY : REGEX_HTML_PLUGIN_LINE;
+	Matcher pluginMatcher = Pattern.compile(regex).matcher(data);
+	String pluginFreeData = data;
+        while (pluginMatcher.find()) {
+            String result = pluginMatcher.group();
+            log.debug("Found="+result);
+	    pluginFreeData = pluginFreeData.replace(result,"");
+        }
+	return pluginFreeData;
     }
 
     public static Collection<String> getUnlinkedCollection(Collection<String> collection) {
