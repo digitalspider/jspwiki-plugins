@@ -35,7 +35,7 @@ public class AutoLinkHtmlFilterTest extends TestCase {
         assertTrue(htmlStrings.contains("http://prelinked.com"));
         assertTrue(htmlStrings.contains("https://link.for.me/test/"));
 
-        Collection<String> linkedHtmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.LINKED_REGEX_HTML);
+        Collection<String> linkedHtmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML_LINKED);
 //        System.out.println("linkedHtmlStrings="+linkedHtmlStrings);
         assertEquals(2,linkedHtmlStrings.size());
         assertTrue(linkedHtmlStrings.contains("[http://digitalspider.com.au]"));
@@ -56,7 +56,7 @@ public class AutoLinkHtmlFilterTest extends TestCase {
 
         htmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML);
         assertEquals(5, htmlStrings.size());
-        linkedHtmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.LINKED_REGEX_HTML);
+        linkedHtmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML_LINKED);
         assertEquals(5,linkedHtmlStrings.size());
     }
 
