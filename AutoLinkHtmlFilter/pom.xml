@@ -9,7 +9,7 @@
   <version>0.2</version>
   <name>AutoLinkHtmlFilter</name>
   <scm>
-    <developerConnection>scm:git:https://github.com/digitalspider/jspwiki-plugins/tree/master/AutoLinkHtmlFilter</developerConnection>
+    <developerConnection>scm:git:https://github.com/digitalspider/jspwiki-plugins.git</developerConnection>
     <tag>AutoLinkHtmlFilter-0.2</tag>
   </scm>
   <dependencies>
