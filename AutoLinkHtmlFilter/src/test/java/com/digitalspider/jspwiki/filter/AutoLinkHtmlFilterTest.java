@@ -61,12 +61,13 @@ public class AutoLinkHtmlFilterTest extends TestCase {
     }
 
     public void testFindURLInEmbeddedPlugin() {
-        String content = "This is a [{ImageGallery url=http://www.smh.com.au/ items=3 width=900 steps=3 autoplay=2000 speed=200 arrows=true nav=true sortby=name sortdesc=true}] embedded plugin with http://test.com parameters";
+        String content = "This is a [{ImageGallery url=http://www.embed.com/ items=3 width=900 steps=3 autoplay=2000 speed=200 arrows=true nav=true sortby=name sortdesc=true}] embedded plugin with http://test.com parameters. With {{{ http://noformat.com text }}} inside.";
 
         Collection<String> htmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML);
         //System.out.println("htmlStrings="+htmlStrings);
         assertEquals(1, htmlStrings.size());
         assertTrue(htmlStrings.contains("http://test.com"));
-        assertFalse(htmlStrings.contains("http://www.smh.com.au"));
+        assertFalse(htmlStrings.contains("http://www.embed.com"));
+        assertFalse(htmlStrings.contains("http://noformat.com"));
     }
 }
