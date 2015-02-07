@@ -58,9 +58,9 @@ public class EmojiFilter extends BasicPageFilter {
     public static final String REGEX_HTML_NOFORMAT = "\\{\\{\\{(.)*\\}\\}\\}";
 
     @Override
-    public String preTranslate(WikiContext wikiContext, String content) throws FilterException {
-	log.info("preTranslate");
-        content = super.preTranslate(wikiContext,content);
+    public String postTranslate(WikiContext wikiContext, String content) throws FilterException {
+	log.info("postTranslate");
+        content = super.postTranslate(wikiContext,content);
         //log.info("content="+content);
         Collection<String> htmlStrings = findByRegex(content,REGEX_EMOJI);
         content = EmojiFilter.replaceEmoji(content,htmlStrings);
@@ -105,7 +105,7 @@ public class EmojiFilter extends BasicPageFilter {
 
     public static String replaceEmoji(String content, Collection<String> emojiStrings) {
         for (String emoji: emojiStrings) {
-            content = content.replace(emoji,"[{Image src='http://www.emoji-cheat-sheet.com/graphics/emojis/"+emoji.substring(3,emoji.length()-3)+".png' height=32 weigth=32}]");
+            content = content.replace(emoji,"<span class='emoji-icon'><img src='http://www.emoji-cheat-sheet.com/graphics/emojis/"+emoji.substring(3,emoji.length()-3)+".png' height=32 weigth=32/></span>");
         }
 	return content;
     }

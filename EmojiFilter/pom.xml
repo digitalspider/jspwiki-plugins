@@ -6,7 +6,7 @@
   <groupId>com.digitalspider.jspwiki.filter</groupId>
   <artifactId>EmojiFilter</artifactId>
   <packaging>jar</packaging>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.1</version>
   <name>EmojiFilter</name>
   <scm>
     <developerConnection>scm:git:https://github.com/digitalspider/jspwiki-plugins.git</developerConnection>
