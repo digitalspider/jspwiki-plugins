@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,12 +51,51 @@ public class EmojiFilter extends BasicPageFilter {
 
 	private static final Logger log = Logger.getLogger(EmojiFilter.class);
 
-    public static final String REGEX_HTML = "(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]";
-    public static final String REGEX_EMOJI = ":::[a-zA-Z0-9+-_!@#$%^&*()]*:::";
-    public static final String REGEX_HTML_LINKED = "(\\||\\[)(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
-    public static final String REGEX_HTML_PLUGIN_BODY= "\\[\\{(.)*\\}\\]";
-    public static final String REGEX_HTML_PLUGIN_LINE = "\\[\\{[a-zA-Z0-9+&@#/%?='~_|!:,.; ]*\\}\\]";
-    public static final String REGEX_HTML_NOFORMAT = "\\{\\{\\{(.)*\\}\\}\\}";
+	public static final String REGEX_HTML = "(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]";
+	public static final String REGEX_EMOJI = ":::[a-zA-Z0-9+-_!@#$%^&*()]*:::";
+	public static final String REGEX_HTML_LINKED = "(\\||\\[)(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
+	public static final String REGEX_HTML_PLUGIN_BODY= "\\[\\{(.)*\\}\\]";
+	public static final String REGEX_HTML_PLUGIN_LINE = "\\[\\{[a-zA-Z0-9+&@#/%?='~_|!:,.; ]*\\}\\]";
+	public static final String REGEX_HTML_NOFORMAT = "\\{\\{\\{(.)*\\}\\}\\}";
+
+	public static final String PARAM_CSSCLASS = "cssclass";
+	public static final String PARAM_ICONSIZE = "iconsize";
+	public static final String PARAM_BASEURL = "baseurl";
+	public static final String PARAM_PREFIX = "prefix";
+	public static final String PARAM_SUFFIX = "suffix";
+
+	public static final String DEFAULT_CSSCLASS = "emoji";
+	public static final int DEFAULT_ICONSIZE = 20;
+	public static final String DEFAULT_BASEURL = "http://www.emoji-cheat-sheet.com/graphics/emojis/";
+	public static final String DEFAULT_PREFIX = "";
+	public static final String DEFAULT_SUFFIX = "jpg";
+
+	private static String cssclass = DEFAULT_CSSCLASS;
+	private static int iconsize = DEFAULT_ICONSIZE;
+	private static String baseurl = DEFAULT_BASEURL;
+	private static String suffix = DEFAULT_SUFFIX;
+	private static String prefix = DEFAULT_PREFIX;
+
+    @Override
+    public void initialize(WikiEngine wikiEngine, Properties properties) throws FilterException {
+	log.info("initialize");
+        super.initialize(wikiEngine,properties);
+	if (properties.containsKey(PARAM_ICONSIZE)) {
+	    iconsize = Integer.parseInt(properties.getProperty(PARAM_ICONSIZE));
+	}
+	if (properties.containsKey(PARAM_CSSCLASS)) {
+	    cssclass = properties.getProperty(PARAM_CSSCLASS);
+	}
+	if (properties.containsKey(PARAM_BASEURL)) {
+	    baseurl = properties.getProperty(PARAM_BASEURL);
+	}
+	if (properties.containsKey(PARAM_PREFIX)) {
+	    prefix = properties.getProperty(PARAM_PREFIX);
+	}
+	if (properties.containsKey(PARAM_SUFFIX)) {
+	    suffix = properties.getProperty(PARAM_SUFFIX);
+	}
+    }
 
     @Override
     public String postTranslate(WikiContext wikiContext, String content) throws FilterException {
@@ -105,7 +145,7 @@ public class EmojiFilter extends BasicPageFilter {
 
     public static String replaceEmoji(String content, Collection<String> emojiStrings) {
         for (String emoji: emojiStrings) {
-            content = content.replace(emoji,"<span class='emoji-icon'><img src='http://www.emoji-cheat-sheet.com/graphics/emojis/"+emoji.substring(3,emoji.length()-3)+".png' height=32 weigth=32/></span>");
+            content = content.replace(emoji,"<span class='"+cssclass+"'><img src='"+baseurl+prefix+emoji.substring(3,emoji.length()-3)+"."+suffix+"' height="+iconsize+" weigth="+iconsize+" /></span>");
         }
 	return content;
     }
