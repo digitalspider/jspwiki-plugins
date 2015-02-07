@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+   <filter class="com.digitalspider.jspwiki.filter.EmojiFilter">
+      <author>DigitalSpider</author>
+      <minVersion>2.10.1</minVersion>
+   </filter>
+</modules>
