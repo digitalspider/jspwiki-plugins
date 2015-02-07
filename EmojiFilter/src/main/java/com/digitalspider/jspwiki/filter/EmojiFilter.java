@@ -52,7 +52,7 @@ public class EmojiFilter extends BasicPageFilter {
 	private static final Logger log = Logger.getLogger(EmojiFilter.class);
 
 	public static final String REGEX_EMOJI = ":::[a-zA-Z0-9+-_!@#$%^&*()]*:::";
-	public static final String REGEX_NOFORMAT = "<pre>(.)*</pre>";
+	public static final String REGEX_NOFORMAT = "<pre>(.|\n)*</pre>";
 
 	public static final String PARAM_CSSCLASS = "cssclass";
 	public static final String PARAM_ICONSIZE = "iconsize";

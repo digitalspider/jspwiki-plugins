@@ -22,7 +22,7 @@ import java.util.Collection;
 public class EmojiFilterTest extends TestCase {
 
     public void testEmojiSyntax() {
-        String content = "This is a :::bowtie::: emoji with a :::smiley::: face, but not inside <pre> :::noformat::: tags </pre>";
+        String content = "This is a :::bowtie::: emoji with a :::smiley::: face, but not inside <pre> :::noformat::: \n tags </pre>";
 
         Collection<String> htmlStrings = EmojiFilter.findByRegex(content,EmojiFilter.REGEX_EMOJI);
 //        System.out.println("htmlStrings="+htmlStrings);
