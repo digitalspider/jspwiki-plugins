@@ -52,9 +52,9 @@ public class AutoLinkHtmlFilter extends BasicPageFilter {
 
     public static final String REGEX_HTML = "(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]";
     public static final String REGEX_HTML_LINKED = "(\\||\\[)(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
-    public static final String REGEX_HTML_PLUGIN_BODY= "\\[\\{(.)*\\}\\]";
+    public static final String REGEX_HTML_PLUGIN_BODY= "\\[\\{(.|\n)*?\\}\\]";
     public static final String REGEX_HTML_PLUGIN_LINE = "\\[\\{[a-zA-Z0-9+&@#/%?='~_|!:,.; ]*\\}\\]";
-    public static final String REGEX_HTML_NOFORMAT = "\\{\\{\\{(.)*\\}\\}\\}";
+    public static final String REGEX_HTML_NOFORMAT = "\\{\\{\\{(.|\n)*?\\}\\}\\}";
 
     @Override
     public String preSave(WikiContext wikiContext, String content) throws FilterException {
