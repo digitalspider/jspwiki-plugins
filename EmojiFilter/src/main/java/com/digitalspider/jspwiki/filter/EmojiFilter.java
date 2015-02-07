@@ -68,7 +68,7 @@ public class EmojiFilter extends BasicPageFilter {
 	public static final int DEFAULT_ICONSIZE = 20;
 	public static final String DEFAULT_BASEURL = "http://www.emoji-cheat-sheet.com/graphics/emojis/";
 	public static final String DEFAULT_PREFIX = "";
-	public static final String DEFAULT_SUFFIX = "png";
+	public static final String DEFAULT_SUFFIX = ".png";
 
 	private static String cssclass = DEFAULT_CSSCLASS;
 	private static int iconsize = DEFAULT_ICONSIZE;
@@ -145,7 +145,7 @@ public class EmojiFilter extends BasicPageFilter {
 
     public static String replaceEmoji(String content, Collection<String> emojiStrings) {
         for (String emoji: emojiStrings) {
-            content = content.replace(emoji,"<span class='"+cssclass+"'><img src='"+baseurl+prefix+emoji.substring(3,emoji.length()-3)+"."+suffix+"' height="+iconsize+" weigth="+iconsize+" /></span>");
+            content = content.replace(emoji,"<span class='"+cssclass+"'><img src='"+baseurl+prefix+emoji.substring(3,emoji.length()-3)+suffix+"' height="+iconsize+" weigth="+iconsize+" /></span>");
         }
 	return content;
     }
