@@ -51,12 +51,8 @@ public class EmojiFilter extends BasicPageFilter {
 
 	private static final Logger log = Logger.getLogger(EmojiFilter.class);
 
-	public static final String REGEX_HTML = "(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]";
 	public static final String REGEX_EMOJI = ":::[a-zA-Z0-9+-_!@#$%^&*()]*:::";
-	public static final String REGEX_HTML_LINKED = "(\\||\\[)(https?|file)://[-a-zA-Z0-9+&@#/%?='~_|!:,.;]*[-a-zA-Z0-9+&@#/%='~_|]\\]";
-	public static final String REGEX_HTML_PLUGIN_BODY= "\\[\\{(.)*\\}\\]";
-	public static final String REGEX_HTML_PLUGIN_LINE = "\\[\\{[a-zA-Z0-9+&@#/%?='~_|!:,.; ]*\\}\\]";
-	public static final String REGEX_HTML_NOFORMAT = "\\{\\{\\{(.)*\\}\\}\\}";
+	public static final String REGEX_NOFORMAT = "<pre>(.)*</pre>";
 
 	public static final String PARAM_CSSCLASS = "cssclass";
 	public static final String PARAM_ICONSIZE = "iconsize";
@@ -123,10 +119,7 @@ public class EmojiFilter extends BasicPageFilter {
 
     public static String removePageSpecialContent(String data) {
 	List<String> regexes = new ArrayList<String>();
-	regexes.add(REGEX_HTML_NOFORMAT);
-	boolean includeBody = true;
-	String regex = (includeBody) ? REGEX_HTML_PLUGIN_BODY : REGEX_HTML_PLUGIN_LINE;
-	regexes.add(regex);
+	regexes.add(REGEX_NOFORMAT);
 	return removeRegexContent(data,regexes);
     }
 

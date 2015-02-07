@@ -22,7 +22,7 @@ import java.util.Collection;
 public class EmojiFilterTest extends TestCase {
 
     public void testEmojiSyntax() {
-        String content = "This is a :::bowtie::: emoji with a :::smiley::: face, but not inside {{{ :::noformat::: tags }}}";
+        String content = "This is a :::bowtie::: emoji with a :::smiley::: face, but not inside <pre> :::noformat::: tags </pre>";
 
         Collection<String> htmlStrings = EmojiFilter.findByRegex(content,EmojiFilter.REGEX_EMOJI);
 //        System.out.println("htmlStrings="+htmlStrings);
@@ -35,14 +35,4 @@ public class EmojiFilterTest extends TestCase {
 	System.out.println("content="+content);
     }
 
-    public void testFindURLInEmbeddedPlugin() {
-        String content = "This is a [{ImageGallery url=http://www.embed.com/ items=3 width=900 steps=3 autoplay=2000 speed=200 arrows=true nav=true sortby=name sortdesc=true}] embedded plugin with http://test.com parameters. With {{{ http://noformat.com text }}} inside.";
-
-        Collection<String> htmlStrings = EmojiFilter.findByRegex(content,EmojiFilter.REGEX_HTML);
-        //System.out.println("htmlStrings="+htmlStrings);
-        assertEquals(1, htmlStrings.size());
-        assertTrue(htmlStrings.contains("http://test.com"));
-        assertFalse(htmlStrings.contains("http://www.embed.com"));
-        assertFalse(htmlStrings.contains("http://noformat.com"));
-    }
 }
