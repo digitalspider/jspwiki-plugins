@@ -40,6 +40,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ public class EmojiFilter extends BasicPageFilter {
 	private static final Logger log = Logger.getLogger(EmojiFilter.class);
 
 	public static final String REGEX_EMOJI = ":::[a-zA-Z0-9+-_!@#$%^&*()]*:::";
-	public static final String REGEX_NOFORMAT = "<pre>(.|\n)*</pre>";
+	public static final String REGEX_NOFORMAT = "<pre>(.|\n)*?<\\/pre>";
 
 	public static final String PARAM_CSSCLASS = "cssclass";
 	public static final String PARAM_ICONSIZE = "iconsize";
@@ -137,9 +138,25 @@ public class EmojiFilter extends BasicPageFilter {
     }
 
     public static String replaceEmoji(String content, Collection<String> emojiStrings) {
-        for (String emoji: emojiStrings) {
-            content = content.replace(emoji,"<span class='"+cssclass+"'><img src='"+baseurl+prefix+emoji.substring(3,emoji.length()-3)+suffix+"' height="+iconsize+" weigth="+iconsize+" /></span>");
+	Matcher matcher = Pattern.compile(REGEX_NOFORMAT).matcher(content);
+	String newContent = content;
+	Map<String,String> placeholderMap = new HashMap<String,String>();
+	String placeholderPrefix = "$$$PLACEHOLDER$$$";
+	int i = 1;
+        while (matcher.find()) {
+	    String placeholderKey = placeholderPrefix+i;
+            String result = matcher.group();
+	    newContent = newContent.replace(result,placeholderKey);
+	    placeholderMap.put(placeholderKey,result);
+	    log.debug("Found("+i+"): "+result);
+	    i++;
         }
-	return content;
+        for (String emoji: emojiStrings) {
+            newContent = newContent.replace(emoji,"<span class='"+cssclass+"'><img src='"+baseurl+prefix+emoji.substring(3,emoji.length()-3)+suffix+"' height="+iconsize+" weigth="+iconsize+" /></span>");
+        }
+	for (String placeholderKey : placeholderMap.keySet()) {
+	    newContent = newContent.replace(placeholderKey,placeholderMap.get(placeholderKey));
+	}
+	return newContent;
     }
 }
