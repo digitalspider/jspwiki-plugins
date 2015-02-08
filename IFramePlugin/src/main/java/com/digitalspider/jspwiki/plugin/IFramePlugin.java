@@ -34,12 +34,15 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
+import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiPage;
 import org.apache.wiki.api.exceptions.PluginException;
+import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.attachment.Attachment;
 import org.apache.wiki.attachment.AttachmentManager;
 import org.apache.wiki.ui.TemplateManager;
+import org.apache.wiki.util.TextUtil;
 
 public class IFramePlugin implements WikiPlugin {
 
@@ -78,7 +81,7 @@ public class IFramePlugin implements WikiPlugin {
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		log.info("STARTED");
-		StringBuffer result = "";
+		StringBuffer result = new StringBuffer();
 
 		// Validate all parameters
 		String attachment	= getCleanParameter(params, PARAM_ATTACHMENT);
@@ -88,17 +91,16 @@ public class IFramePlugin implements WikiPlugin {
 		String width		= getCleanParameter(params, PARAM_WIDTH, DEFAULT_WIDTH);
 		String height		= getCleanParameter(params, PARAM_HEIGHT, DEFAULT_HEIGHT);
 		String marginwidth  = getCleanParameter(params, PARAM_MARGINWIDTH, DEFAULT_MARGINWIDTH);
-		String marginheight = getCleanParameter(params, PARAM_MARGINHEIGHT, DEFAULT_MARGINHEIGTH);
+		String marginheight = getCleanParameter(params, PARAM_MARGINHEIGHT, DEFAULT_MARGINHEIGHT);
 		String scrolling 	= getCleanParameter(params, PARAM_SCROLLING, DEFAULT_SCROLLING);
 
-		log.info("url="+url+" autoPlay="+autoPlay+" items="+items+" suffix="+suffix+" prefix="+prefix);
+		//log.info("url="+url+" autoPlay="+autoPlay+" items="+items+" suffix="+suffix+" prefix="+prefix);
 
-		try {
-			WikiPage currentPage = wikiContext.getPage();
-			if (attachment == null && url == null)
-			{
-				throw new PluginException("Parameter 'attachment' or 'url' is required for the MediaPlugin to work");
-			}
+		WikiPage currentPage = wikiContext.getPage();
+		if (attachment == null && url == null)
+		{
+			throw new PluginException("Parameter 'attachment' or 'url' is required for the MediaPlugin to work");
+		}
 
 		String src = null;
 
@@ -106,11 +108,13 @@ public class IFramePlugin implements WikiPlugin {
 		{
 			try
 			{
+				WikiEngine engine = wikiContext.getEngine();
+
 				AttachmentManager mgr = engine.getAttachmentManager();
 
-				Attachment att = mgr.getAttachmentInfo(context, attachment);
+				Attachment att = mgr.getAttachmentInfo(wikiContext, attachment);
 
-				src = context.getURL(WikiContext.ATTACH, att.getName());
+				src = wikiContext.getURL(WikiContext.ATTACH, att.getName());
 			}
 			catch (ProviderException ex)
 			{
