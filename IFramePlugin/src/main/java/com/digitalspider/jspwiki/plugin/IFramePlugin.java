@@ -78,15 +78,15 @@ public class IFramePlugin implements WikiPlugin {
 	@Override
 	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
 		log.info("STARTED");
-		String result = "";
+		StringBuffer result = "";
 
 		// Validate all parameters
-        String attachment	= getCleanParameter(params, PARAM_ATTACHMENT);
+		String attachment	= getCleanParameter(params, PARAM_ATTACHMENT);
 		String url 			= getCleanParameter(params, PARAM_URL);
-        String align		= getCleanParameter(params, PARAM_ALIGN, "center").toLowerCase();
-        String border		= getCleanParameter(params, PARAM_BORDER, DEFAULT_BORDER);
-        String width		= getCleanParameter(params, PARAM_WIDTH, DEFAULT_WIDTH);
-        String height		= getCleanParameter(params, PARAM_HEIGHT, DEFAULT_HEIGHT);
+		String align		= getCleanParameter(params, PARAM_ALIGN, "center").toLowerCase();
+		String border		= getCleanParameter(params, PARAM_BORDER, DEFAULT_BORDER);
+		String width		= getCleanParameter(params, PARAM_WIDTH, DEFAULT_WIDTH);
+		String height		= getCleanParameter(params, PARAM_HEIGHT, DEFAULT_HEIGHT);
 		String marginwidth  = getCleanParameter(params, PARAM_MARGINWIDTH, DEFAULT_MARGINWIDTH);
 		String marginheight = getCleanParameter(params, PARAM_MARGINHEIGHT, DEFAULT_MARGINHEIGTH);
 		String scrolling 	= getCleanParameter(params, PARAM_SCROLLING, DEFAULT_SCROLLING);
@@ -95,10 +95,10 @@ public class IFramePlugin implements WikiPlugin {
 
 		try {
 			WikiPage currentPage = wikiContext.getPage();
-        if (attachment == null && url == null)
-        {
-            throw new PluginException("Parameter 'attachment' or 'url' is required for the MediaPlugin to work");
-        }
+			if (attachment == null && url == null)
+			{
+				throw new PluginException("Parameter 'attachment' or 'url' is required for the MediaPlugin to work");
+			}
 
 		String src = null;
 
@@ -136,35 +136,28 @@ public class IFramePlugin implements WikiPlugin {
 			}
 		}
 
-        StringBuffer result = new StringBuffer();
-
 		result.append("<iframe src=\"" + src + "\" align=\"" + align + "\" frameborder=\"" + border + "\" width=\"" + width + "\" height=\"" + height + "\" marginwidth=\"" + marginwidth + "\" marginheight=\"" + marginheight + "\" scrolling=\"" + scrolling +"\">\n");
 		result.append("    Your browser does not support inline frames.\n");
 		result.append("</iframe>\n");
 
-		log.info("result="+result);
+		log.info("result="+result.toString());
 		log.info("DONE.");
-		return result;
+		return result.toString();
 	}
 
-	private static final String getCleanParameter(Map params, String paramId, String defaultValue)
-	{
+	private static final String getCleanParameter(Map params, String paramId, String defaultValue) {
 		String value = getCleanParameter(params, paramId);
-
-		if (value == null)
-		{
+		if (value == null) {
 			value = defaultValue;
 		}
-
 		return value;
 	}
 
-    /**
-     *  This method is used to clean away things like quotation marks which
-     *  a malicious user could use to stop processing and insert javascript.
-     */
-    private static final String getCleanParameter(Map params, String paramId)
-    {
-        return TextUtil.replaceEntities((String) params.get(paramId));
-    }
+	/**
+	 *  This method is used to clean away things like quotation marks which
+	 *  a malicious user could use to stop processing and insert javascript.
+	 */
+	private static final String getCleanParameter(Map params, String paramId) { 
+		return TextUtil.replaceEntities((String) params.get(paramId));
+	}
 }
