@@ -10,11 +10,26 @@
   <name>Digital Spider Plugins Pack</name>
   
   <modules>
-    <module>HitCountPlugin</module>
+    <module>AutoLinkHtmlFilter</module>
+    <module>EmojiFilter</module>
+    <module>EncryptedPageProvider</module>
     <module>GoComicsPlugin</module>
+    <module>GoogleMapsPlugin</module>
+    <module>HitCountPlugin</module>
+    <module>IFramePlugin</module>
     <module>ImageGalleryPlugin</module>
-    <module>VideoPlugin</module>
+    <module>JDBCPageProvider</module>
+    <module>JDBCPlugin</module>
     <module>JiraPlugin</module>
+    <module>MyPlugin</module>
+    <module>PanelPlugin</module>
+    <!--
+    <module>PanelPluginPlus</module>
+    -->
+    <module>PasswordPlugin</module>
+    <module>PluginListPlugin</module>
+    <module>TreePlugin</module>
+    <module>VideoPlugin</module>
   </modules>
 
   <dependencies>

@@ -15,16 +15,17 @@
  */
 package com.digitalspider.jspwiki.filter;
 
-import junit.framework.TestCase;
-
 import java.util.Collection;
+
+import junit.framework.TestCase;
 
 public class AutoLinkHtmlFilterTest extends TestCase {
 
     public void testFindURL() {
         String content = "This is a http://www.google.com link to a page on [http://digitalspider.com.au] and http://test/abc.com?abc='21'" +
                 " in other news [prelinked|http://prelinked.com] values should not autolink." +
-                " but https://link.for.me/test/ should";
+                " but https://link.for.me/test/ should. "+
+                " {{{ However content within http://noformat.com and [http://noformatlinked.com] should not link }}}";
 
         Collection<String> htmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML);
 //        System.out.println("htmlStrings="+htmlStrings);
@@ -53,6 +54,11 @@ public class AutoLinkHtmlFilterTest extends TestCase {
         for (String link: htmlStrings) {
             content = content.replace(link,"["+link+"]");
         }
+		String expectedContent = "This is a [http://www.google.com] link to a page on [http://digitalspider.com.au] and [http://test/abc.com?abc='21']" +
+                " in other news [prelinked|http://prelinked.com] values should not autolink." +
+                " but [https://link.for.me/test/] should. "+
+                " {{{ However content within http://noformat.com and [http://noformatlinked.com] should not link }}}";
+        assertEquals(expectedContent, content);
 
         htmlStrings = AutoLinkHtmlFilter.findByRegex(content,AutoLinkHtmlFilter.REGEX_HTML);
         assertEquals(5, htmlStrings.size());

@@ -15,38 +15,21 @@
  */
 package com.digitalspider.jspwiki.filter;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.wiki.PageManager;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.api.exceptions.FilterException;
-import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.filters.BasicPageFilter;
-import org.apache.wiki.api.plugin.WikiPlugin;
-import org.apache.wiki.parser.JSPWikiMarkupParser;
-import org.apache.wiki.parser.WikiDocument;
-import org.apache.wiki.render.XHTMLRenderer;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
+import org.apache.wiki.WikiContext;
+import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.exceptions.FilterException;
+import org.apache.wiki.api.filters.BasicPageFilter;
 
 public class EmojiFilter extends BasicPageFilter {
 
@@ -137,26 +120,31 @@ public class EmojiFilter extends BasicPageFilter {
 	return newData;
     }
 
-    public static String replaceEmoji(String content, Collection<String> emojiStrings) {
-	Matcher matcher = Pattern.compile(REGEX_NOFORMAT).matcher(content);
-	String newContent = content;
-	Map<String,String> placeholderMap = new HashMap<String,String>();
-	String placeholderPrefix = "$$$PLACEHOLDER$$$";
-	int i = 1;
-        while (matcher.find()) {
-	    String placeholderKey = placeholderPrefix+i;
-            String result = matcher.group();
-	    newContent = newContent.replace(result,placeholderKey);
-	    placeholderMap.put(placeholderKey,result);
-	    log.debug("Found("+i+"): "+result);
-	    i++;
-        }
-        for (String emoji: emojiStrings) {
-            newContent = newContent.replace(emoji,"<span class='"+cssclass+"'><img src='"+baseurl+prefix+emoji.substring(3,emoji.length()-3)+suffix+"' height="+iconsize+" weigth="+iconsize+" /></span>");
-        }
-	for (String placeholderKey : placeholderMap.keySet()) {
-	    newContent = newContent.replace(placeholderKey,placeholderMap.get(placeholderKey));
+	public static String replaceEmoji(String content, Collection<String> emojiStrings) {
+		Matcher matcher = Pattern.compile(REGEX_NOFORMAT).matcher(content);
+		String newContent = content;
+		Map<String, String> placeholderMap = new HashMap<String, String>();
+		String placeholderPrefix = "$$$PLACEHOLDER$$$";
+		int i = 1;
+		while (matcher.find()) {
+			String placeholderKey = placeholderPrefix + i;
+			String result = matcher.group();
+			newContent = newContent.replace(result, placeholderKey);
+			placeholderMap.put(placeholderKey, result);
+			log.debug("Found(" + i + "): " + result);
+			i++;
+		}
+		for (String emoji : emojiStrings) {
+			newContent = newContent.replace(emoji,
+					"<span class='" + cssclass + "'><img src='" + baseurl
+							+ prefix + emoji.substring(3, emoji.length() - 3)
+							+ suffix + "' height=" + iconsize + " weigth="
+							+ iconsize + " /></span>");
+		}
+		for (String placeholderKey : placeholderMap.keySet()) {
+			newContent = newContent.replace(placeholderKey,
+					placeholderMap.get(placeholderKey));
+		}
+		return newContent;
 	}
-	return newContent;
-    }
 }

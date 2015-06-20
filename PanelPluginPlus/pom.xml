@@ -39,7 +39,7 @@
                   build.xml.
                 -->
                 <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="dist/${project.artifactId}-${project.version}.${project.packaging}"/>
-                <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="${tomcat-home}/webapps/JSPWiki/WEB-INF/lib/${project.artifactId}-${project.version}.${project.packaging}"/>
+                <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="${tomcat.home}/webapps/JSPWiki/WEB-INF/lib/${project.artifactId}-${project.version}.${project.packaging}"/>
               </tasks>
             </configuration>
             <goals>
