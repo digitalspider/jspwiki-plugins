@@ -1,5 +1,9 @@
 **/target/**
 **/.idea/**
+**/.metadata
+**/.settings
+**/.project
+**/.classpath
 **/jspwiki.log
 ImageGalleryPlugin/dist/jssor-templates
 JiraPlugin/dist/jira-plugin-jar-dependencies
