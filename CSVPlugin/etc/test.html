@@ -1,0 +1,296 @@
+<html>
+<head>
+<title>redis-db</title>
+<script>
+function cancelAll(form) {
+	var linkEles = form.getElementsByClassName("link");
+	for (var i=0; i<linkEles.length; i++) {
+		var linkEle = linkEles[i];
+		if (linkEle.getAttribute('name') == "cancel") {
+			linkEles[i].click();
+		}
+	}
+}
+
+function doAction(ele) {
+	var row = findParentNodeByType('TR', ele);
+	var form = findParentNodeByType('FORM', ele);
+	var txt = ele.innerHTML;
+	//alert("doAction id="+ele.id+" txt="+txt+" row="+row.id+" form="+form.id);
+
+	if (txt == "Config" || txt == "Close" ) {
+		cancelAll(form);
+		var configEleName = row.id+".config";
+		if (row.id.contains(".0.0")) {
+			configEleName = configEleName.replace(".0.0",".0");
+		}
+		var configEle = document.getElementById(configEleName);
+		if (txt == "Config") {
+			configEle.style.display="block";
+		} else if (txt == "Close") {
+			configEle.style.display="none";
+		}
+	} else if (txt == "Cancel") {
+		tdEles = row.getElementsByTagName("td");
+		for (var i=0; i<tdEles.length; i++) {
+			var tdEle = tdEles[i];
+			var tdEleName = tdEle.getAttribute('name');
+			var tdEleValue = tdEle.firstChild.value;
+			if (tdEleName != 'id' && tdEleName != 'link') {
+				tdEle.innerHTML=tdEleValue;
+			}
+			if (tdEleName == 'link') {
+				tdEle.getElementsByTagName("a")[0].id='edit';
+				tdEle.getElementsByTagName("a")[0].name='edit';
+				tdEle.getElementsByTagName("a")[0].textContent='Edit';
+				tdEle.getElementsByTagName("a")[1].id='delete';
+				tdEle.getElementsByTagName("a")[1].name='delete';
+				tdEle.getElementsByTagName("a")[1].textContent='Delete';
+			}
+		}
+		var addTdEle = row.parentNode.lastElementChild;
+		addTdEle.style.visibility="visible";
+	} else if (txt == "Edit") {
+		cancelAll(form);
+		tdEles = row.getElementsByTagName("td");
+		for (var i=0; i<tdEles.length; i++) {
+			var tdEle = tdEles[i];
+			var tdEleName = tdEle.getAttribute('name');
+			var tdEleValue = tdEle.textContent;
+			if (tdEleName != 'id' && tdEleName != 'link') {
+				tdEle.innerHTML="<input type='text' id='"+tdEleName+"' name='"+tdEleName+"' value='"+tdEleValue+"'/>";
+			}
+			if (tdEleName == 'link') {
+				tdEle.getElementsByTagName("a")[0].id='save';
+				tdEle.getElementsByTagName("a")[0].name='save';
+				tdEle.getElementsByTagName("a")[0].textContent='Save';
+				tdEle.getElementsByTagName("a")[1].id='cancel';
+				tdEle.getElementsByTagName("a")[1].name='cancel';
+				tdEle.getElementsByTagName("a")[1].textContent='Cancel';
+			}
+		}
+		var addTdEle = row.parentNode.lastElementChild;
+		addTdEle.style.visibility="hidden";
+	} else if (txt=="Delete") {
+		// TODO: Delete
+	} else if (txt == "Save") {
+		// TODO: Save
+	} else if (txt == "Add") {
+		// TODO: Add
+	} else if (txt == "Search") {
+		// TODO: Search
+	} else if (txt == "First") {
+		// TODO: First page results
+	} else if (txt == "Last") {
+		// TODO: Last page results
+	} else if (txt == "Prev") {
+		// TODO: Prev page results
+	} else if (txt == "Next") {
+		// TODO: Next page results
+	} else if (txt == "ID") {
+		// TODO: Sort by ID
+	}
+}
+
+function findParentNodeByType(parentType, childObj) {
+	var testObj = childObj.parentNode;
+	var count = 1;
+	while(testObj.nodeName != parentType) {
+		//alert('My name is ' + testObj.getAttribute('name') + '. I am a '+testObj.nodeName);
+		testObj = testObj.parentNode;
+		count++;
+	}
+	//alert('Finally found ' + testObj.getAttribute('name') + ' after going up ' + count + ' level(s) through the DOM tree. I am a '+testObj.nodeName);
+	return testObj;
+}
+
+function findParentNodeByName(parentName, childObj) {
+	var testObj = childObj.parentNode;
+	var count = 1;
+	while(testObj.getAttribute('name') != parentName) {
+		//alert('My name is ' + testObj.getAttribute('name') + '. I am a '+testObj.nodeName);
+		testObj = testObj.parentNode;
+		count++;
+	}
+	//alert('Finally found ' + testObj.getAttribute('name') + ' after going up ' + count + ' level(s) through the DOM tree. I am a '+testObj.nodeName);
+	return testObj;
+}
+</script>
+</head>
+<body>
+
+<form id="test.dataform" name="test.dataform" class="dataform">
+<table id="test.opstable" name="test.opstable" class="opstable">
+	<tr id="test.search" name="tableRow" class="tableRow">
+		<td id="dataId" name="dataId" class="dataId">Test</td>
+		<td name="search" class="search"><input type="text" id="search" name="search"/>&nbsp;
+		<a href="javascript:void(0)" id="search" name="search" class="link" onclick="doAction(this)">Search</a></td>
+	</tr>
+	<tr id="test.pagination" name="tableRow" class="tableRow">
+		<td name="pages" class="pages" colspan="2">Pages:
+			<a href="javascript:void(0)" id="pageFirst" name="pageFirst" class="link pageNumber" onclick="doAction(this)">&lt;&lt;</a>&nbsp;|&nbsp;
+			<a href="javascript:void(0)" id="pagePrev" name="pagePrev" class="link pageNumber" onclick="doAction(this)">&lt;</a>&nbsp;|&nbsp;
+			<span id="pageCurrent" name="pageCurrent" class="pageNumber">1</span>&nbsp;/&nbsp;<span id="pageTotal" name="pageTotal" class="pageNumber">5</span>&nbsp;|&nbsp;
+			<a href="javascript:void(0)" id="pageNext" name="pageNext" class="link pageNumber" onclick="doAction(this)">&gt;</a>&nbsp;|&nbsp;
+			<a href="javascript:void(0)" id="pageLast" name="pageLast" class="link pageNumber" onclick="doAction(this)">&gt;&gt;</a>
+		</td>
+	</tr>
+</table>
+
+<table id="test.datatable" name="test.datatable" class="datatable">
+	<tr id="test.0" name="tableRow" class="tableRow">
+		<th><a href="javascript:void(0)" id="sort" name="sort" class="link" onclick="doAction(this)">ID</a></th>
+		<th><a href="javascript:void(0)" id="sort" name="sort" class="link" onclick="doAction(this)">Name</a></th>
+		<th><a href="javascript:void(0)" id="sort" name="sort" class="link" onclick="doAction(this)">Age</a></th>
+		<th>Actions (<a href="javascript:void(0)" id="config" name="config" class="link" onclick="doAction(this)">Config</a>)</th>
+	</tr>
+	<tr id="test.1" name="tableRow" class="tableRow">
+		<td name="id" class="id">1</td>
+		<td name="name" class="name">David</td>
+		<td name="age" class="age">23</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="test.2" name="tableRow" class="tableRow">
+		<td name="id" class="id">2</td>
+		<td name="name" class="name">Tim</td>
+		<td name="age" class="age">12</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="test.new" name="tableRow" class="tableRow">
+		<td name="id" class="id"></td>
+		<td name="name" class="name"><input type="text" id="name" name="name"/></td>
+		<td name="age" class="age"><input type="text" id="age" name="age"/></td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="add" name="add" class="link" onclick="doAction(this)">Add</a></td>
+	</tr>
+</table>
+
+<div id="test.0.config" name="test.0.config" style="display: none">
+<table id="test.configtable" name="test.configtable" class="configtable">
+	<tr id="test.0.0" name="tableRow" class="tableRow">
+		<th>ID</th>
+		<th>Column Name</th>
+		<th>Column Type</th>
+		<th>Actions (<a href="javascript:void(0)" id="close" name="close" class="link" onclick="doAction(this)">Close</a>)</th>
+	</tr>
+	<tr id="test.0.1" name="tableRow" class="tableRow">
+		<td name="id" class="id">1</td>
+		<td name="name" class="name">name</td>
+		<td name="type" class="type">string</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="test.0.2" name="tableRow" class="tableRow">
+		<td name="id" class="id">2</td>
+		<td name="name" class="name">age</td>
+		<td name="type" class="type">int</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="test.0.new" name="tableRow" class="tableRow">
+		<td name="id" class="id"></td>
+		<td name="name" class="name"><input type="text" id="colname" name="colname"/></td>
+		<td name="type" class="type"><input type="text" id="coltype" name="coltype"/></td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="add" name="add" class="link" onclick="doAction(this)">Add</a></td>
+	</tr>
+</table>
+</div>
+</form>
+
+
+
+<form id="try.dataform" name="try.dataform" class="dataform">
+<table id="try.opstable" name="try.opstable" class="opstable">
+	<tr id="try.search" name="tableRow" class="tableRow">
+		<td id="dataId" name="dataId" class="dataId">Try</td>
+		<td name="search" class="search"><input type="text" id="search" name="search"/>&nbsp;
+		<a href="javascript:void(0)" id="search" name="search" class="link" onclick="doAction(this)">Search</a></td>
+	</tr>
+	<tr id="try.pagination" name="tableRow" class="tableRow">
+		<td name="pages" class="pages" colspan="2">Pages:
+			<a href="javascript:void(0)" id="pageFirst" name="pageFirst" class="link pageNumber" onclick="doAction(this)">&lt;&lt;</a>&nbsp;|&nbsp;
+			<a href="javascript:void(0)" id="pagePrev" name="pagePrev" class="link pageNumber" onclick="doAction(this)">&lt;</a>&nbsp;|&nbsp;
+			<span id="pageCurrent" name="pageCurrent" class="pageNumber">1</span>&nbsp;/&nbsp;<span id="pageTotal" name="pageTotal" class="pageNumber">5</span>&nbsp;|&nbsp;
+			<a href="javascript:void(0)" id="pageNext" name="pageNext" class="link pageNumber" onclick="doAction(this)">&gt;</a>&nbsp;|&nbsp;
+			<a href="javascript:void(0)" id="pageLast" name="pageLast" class="link pageNumber" onclick="doAction(this)">&gt;&gt;</a>
+		</td>
+	</tr>
+</table>
+
+<table id="try.datatable" name="try.datatable" class="datatable">
+	<tr id="try.0" name="tableRow" class="tableRow">
+		<th><a href="javascript:void(0)" id="sort" name="sort" class="link" onclick="doAction(this)">ID</a></th>
+		<th><a href="javascript:void(0)" id="sort" name="sort" class="link" onclick="doAction(this)">Name</a></th>
+		<th><a href="javascript:void(0)" id="sort" name="sort" class="link" onclick="doAction(this)">Age</a></th>
+		<th>Actions (<a href="javascript:void(0)" id="config" name="config" class="link" onclick="doAction(this)">Config</a>)</th>
+	</tr>
+	<tr id="try.1" name="tableRow" class="tableRow">
+		<td name="id" class="id">1</td>
+		<td name="name" class="name">David</td>
+		<td name="age" class="age">23</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="try.2" name="tableRow" class="tableRow">
+		<td name="id" class="id">2</td>
+		<td name="name" class="name">Tim</td>
+		<td name="age" class="age">12</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="try.new" name="tableRow" class="tableRow">
+		<td name="id" class="id"></td>
+		<td name="name" class="name"><input type="text" id="name" name="name"/></td>
+		<td name="age" class="age"><input type="text" id="age" name="age"/></td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="add" name="add" class="link" onclick="doAction(this)">Add</a></td>
+	</tr>
+</table>
+
+<div id="try.0.config" name="try.0.config" style="display: none">
+<table id="try.configtable" name="try.configtable" class="configtable">
+	<tr id="try.0.0" name="tableRow" class="tableRow">
+		<th>ID</th>
+		<th>Column Name</th>
+		<th>Column Type</th>
+		<th>Actions (<a href="javascript:void(0)" id="close" name="close" class="link" onclick="doAction(this)">Close</a>)</th>
+	</tr>
+	<tr id="try.0.1" name="tableRow" class="tableRow">
+		<td name="id" class="id">1</td>
+		<td name="name" class="name">name</td>
+		<td name="type" class="type">string</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="try.0.2" name="tableRow" class="tableRow">
+		<td name="id" class="id">2</td>
+		<td name="name" class="name">age</td>
+		<td name="type" class="type">int</td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="edit" name="edit" class="link" onclick="doAction(this)">Edit</a>&nbsp;|&nbsp;<a href="javascript:void(0)" id="delete" name="delete" class="link" onclick="doAction(this)">Delete</a></td>
+	</tr>
+	<tr id="try.0.new" name="tableRow" class="tableRow">
+		<td name="id" class="id"></td>
+		<td name="name" class="name"><input type="text" id="colname" name="colname"/></td>
+		<td name="type" class="type"><input type="text" id="coltype" name="coltype"/></td>
+		<td name="link" class="link"><a href="javascript:void(0)" id="add" name="add" class="link" onclick="doAction(this)">Add</a></td>
+	</tr>
+</table>
+</div>
+</form>
+
+
+
+<div style="display: none">
+<a href="http://redis.io/commands"/></a>
+redis-cli.exe --raw hmset test.0 name string age int pass bool
+redis-cli.exe --raw hmset test.1 name david age 23 pass 1
+redis-cli.exe --raw hmset test.2 name tim age 12 pass 0
+
+redis-cli.exe --raw keys test.* | sort | wc -l
+
+redis-cli.exe --raw hkeys test.0
+
+redis-cli.exe --raw hvals test.1
+
+redis-cli.exe --raw hgetall test.1
+
+redis-cli.exe --raw hget test.1 name
+
+redis-cli.exe save
+</div>
+
+</body>
+</html>
