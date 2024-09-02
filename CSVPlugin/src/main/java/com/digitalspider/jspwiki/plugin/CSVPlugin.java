@@ -28,19 +28,20 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import org.apache.commons.lang3.StringUtils;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.api.engine.PluginManager;
+import org.apache.wiki.api.core.Engine;
+
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.plugin.WikiPlugin;
+import org.apache.wiki.api.plugin.Plugin;
+import org.apache.wiki.plugin.PluginManager;
+import org.apache.wiki.render.RenderingManager;
 
-public class CSVPlugin implements WikiPlugin {
+public class CSVPlugin implements Plugin {
 
-	private final Logger log = Logger.getLogger(CSVPluginTest.class);
+    private final Logger log = Logger.getLogger(CSVPlugin.class);
 
     public enum SQLType {
         MYSQL("com.mysql.jdbc.Driver", "jdbc:mysql:", "jdbc:mysql://hostname:portNumber/databaseName"),
@@ -53,18 +54,20 @@ public class CSVPlugin implements WikiPlugin {
         private String driverClass;
         private String startsWith;
         private String urlDefaultPath;
+
         SQLType(String driverClass, String startsWith, String urlDefaultPath) {
             this.driverClass = driverClass;
             this.startsWith = startsWith;
             this.urlDefaultPath = urlDefaultPath;
         }
+
         public static SQLType parse(String input) throws Exception {
             for (SQLType type : SQLType.values()) {
                 if (type.name().equalsIgnoreCase(input) || type.driverClass.equalsIgnoreCase(input)) {
                     return type;
                 }
             }
-            throw new Exception("Could not find SQLType of value: "+input);
+            throw new Exception("Could not find SQLType of value: " + input);
         }
     }
 
@@ -99,13 +102,13 @@ public class CSVPlugin implements WikiPlugin {
     private String source = DEFAULT_SOURCE;
     private DataSource ds = null;
 
-	@Override
-	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+    @Override
+    public String execute(org.apache.wiki.api.core.Context wikiContext, Map<String, String> params) throws PluginException {
         setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
-        WikiEngine engine = wikiContext.getEngine();
+        Engine engine = wikiContext.getEngine();
         Properties props = engine.getWikiProperties();
 
         // Validate all parameters
@@ -127,7 +130,7 @@ public class CSVPlugin implements WikiPlugin {
                 conn = ds.getConnection();
             }
 
-            sql = addLimits(sqlType,sql,maxResults);
+            sql = addLimits(sqlType, sql, maxResults);
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
 
@@ -141,19 +144,19 @@ public class CSVPlugin implements WikiPlugin {
             }
 
             while (rs.next()) {
-                for (int i=0; i<md.getColumnCount(); i++) {
-                    String value = rs.getString(i+1);
-                    buffer.append("| "+value);
+                for (int i = 0; i < md.getColumnCount(); i++) {
+                    String value = rs.getString(i + 1);
+                    buffer.append("| " + value);
                 }
                 buffer.append("\n");
             }
 
-            log.info("result="+buffer.toString());
-            result = engine.textToHTML(wikiContext,buffer.toString());
+            log.info("result=" + buffer.toString());
+            result = engine.getManager(RenderingManager.class).textToHTML(wikiContext, buffer.toString());
 
-            result = "<div class='"+className+"'>"+result+"</div>";
+            result = "<div class='" + className + "'>" + result + "</div>";
         } catch (Exception e) {
-            log.error("ERROR. "+e.getMessage()+". sql="+sql,e);
+            log.error("ERROR. " + e.getMessage() + ". sql=" + sql, e);
             throw new PluginException(e.getMessage());
         } finally {
             if (conn != null) {
@@ -165,8 +168,8 @@ public class CSVPlugin implements WikiPlugin {
             }
         }
 
-		return result;
-	}
+        return result;
+    }
 
     protected void validateParams(Properties props, Map<String, String> params) throws PluginException {
         String paramName;
@@ -189,34 +192,30 @@ public class CSVPlugin implements WikiPlugin {
             try {
                 sqlType = SQLType.parse(param);
             } catch (Exception e) {
-                throw new PluginException(paramName + " property is not a valid value. " +param);
+                throw new PluginException(paramName + " property is not a valid value. " + param);
             }
             try {
                 Class.forName(param).newInstance();
-            }
-            catch(ClassNotFoundException e) {
-                log.error("Error: unable to load driver class "+param+"!",e);
-                throw new PluginException("Error: unable to load driver class "+param+"!");
-            }
-            catch(IllegalAccessException e) {
-                log.error("Error: access problem while loading "+param+"!",e);
-                throw new PluginException("Error: access problem while loading "+param+"!");
-            }
-            catch(InstantiationException e) {
-                log.error("Error: unable to instantiate driver "+param+"!",e);
-                throw new PluginException("Error: unable to instantiate driver "+param+"!");
-            }
-            catch(Exception e) {
-                log.error("Error: unable to load driver "+param+"!",e);
-                throw new PluginException("Error: unable to load driver "+param+"! "+e.getMessage());
+            } catch (ClassNotFoundException e) {
+                log.error("Error: unable to load driver class " + param + "!", e);
+                throw new PluginException("Error: unable to load driver class " + param + "!");
+            } catch (IllegalAccessException e) {
+                log.error("Error: access problem while loading " + param + "!", e);
+                throw new PluginException("Error: access problem while loading " + param + "!");
+            } catch (InstantiationException e) {
+                log.error("Error: unable to instantiate driver " + param + "!", e);
+                throw new PluginException("Error: unable to instantiate driver " + param + "!");
+            } catch (Exception e) {
+                log.error("Error: unable to load driver " + param + "!", e);
+                throw new PluginException("Error: unable to load driver " + param + "! " + e.getMessage());
             }
         } else {
             try {
                 Context ctx = new InitialContext();
                 ds = (DataSource) ctx.lookup("java:/comp/env/jdbc/" + source);
             } catch (NamingException e) {
-                log.error("Neither jspwiki-custom.properties or conf/context.xml has not been configured for "+source+"!");
-                throw new PluginException("Neither jspwiki-custom.properties or conf/context.xml has not been configured for "+source+"!");
+                log.error("Neither jspwiki-custom.properties or conf/context.xml has not been configured for " + source + "!");
+                throw new PluginException("Neither jspwiki-custom.properties or conf/context.xml has not been configured for " + source + "!");
             }
         }
         if (ds == null) {
@@ -228,8 +227,8 @@ public class CSVPlugin implements WikiPlugin {
                     throw new PluginException(paramName + " property is not a valid value");
                 }
                 if (!param.trim().startsWith(sqlType.startsWith)) {
-                    throw new PluginException("Error: " + paramName + " property has value " + param + ". " +
-                            "Expected: " + sqlType.urlDefaultPath);
+                    throw new PluginException("Error: " + paramName + " property has value " + param + ". "
+                            + "Expected: " + sqlType.urlDefaultPath);
                 }
                 dbUrl = param;
             }
@@ -252,7 +251,7 @@ public class CSVPlugin implements WikiPlugin {
                 dbPassword = param;
             }
         }
-        paramName = getPropKey(PROP_MAXRESULTS,source);
+        paramName = getPropKey(PROP_MAXRESULTS, source);
         param = props.getProperty(paramName);
         if (StringUtils.isNotBlank(param)) {
             log.info(paramName + "=" + param);
@@ -299,7 +298,7 @@ public class CSVPlugin implements WikiPlugin {
         if (StringUtils.isNotBlank(sql)) {
             result = sql.trim();
             if (result.endsWith(";")) {
-                result = result.substring(result.length()-1);
+                result = result.substring(result.length() - 1);
             }
             switch (sqlType) {
                 case MSSQL:
@@ -310,22 +309,22 @@ public class CSVPlugin implements WikiPlugin {
                     break;
                 case MYSQL:
                     if (!result.toLowerCase().contains(" limit ")) {
-                        result = result + " limit " + maxResults+";";
+                        result = result + " limit " + maxResults + ";";
                     }
                     break;
                 case ORACLE:
                     if (!result.toLowerCase().contains("rownum")) {
-                        result = "select * from ( "+result+" ) where ROWNUM <= " + maxResults+";";
+                        result = "select * from ( " + result + " ) where ROWNUM <= " + maxResults + ";";
                     }
                     break;
                 case POSTGRESQL:
                     if (!result.toLowerCase().contains(" limit ")) {
-                        result = result + " limit " + maxResults+";";
+                        result = result + " limit " + maxResults + ";";
                     }
                     break;
                 case DB2:
                     if (!result.toLowerCase().contains(" fetch")) {
-                        result = result + " FETCH FIRST "+maxResults+" ROWS ONLY;";
+                        result = result + " FETCH FIRST " + maxResults + " ROWS ONLY;";
                     }
                     break;
                 case SYBASE:
@@ -342,7 +341,7 @@ public class CSVPlugin implements WikiPlugin {
     private String getPropKey(String currentKey, String source) {
         String result = currentKey;
         if (StringUtils.isNotBlank(source)) {
-            result+="."+source;
+            result += "." + source;
         }
         return result;
     }

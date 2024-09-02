@@ -18,7 +18,7 @@
  */
 package org.apache.wiki.crypto;
 
-import org.apache.wiki.WikiProvider;
+import org.apache.wiki.api.providers.WikiProvider;
 import org.apache.wiki.api.exceptions.EncryptionException;
 
 import javax.crypto.Cipher;

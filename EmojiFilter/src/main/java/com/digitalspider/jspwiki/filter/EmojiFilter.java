@@ -26,12 +26,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
+import org.apache.wiki.api.core.Context;
+import org.apache.wiki.api.core.Engine;
 import org.apache.wiki.api.exceptions.FilterException;
-import org.apache.wiki.api.filters.BasicPageFilter;
+import org.apache.wiki.api.filters.BasePageFilter;
 
-public class EmojiFilter extends BasicPageFilter {
+public class EmojiFilter extends BasePageFilter {
 
 	private static final Logger log = Logger.getLogger(EmojiFilter.class);
 
@@ -57,7 +57,7 @@ public class EmojiFilter extends BasicPageFilter {
 	private static String prefix = DEFAULT_PREFIX;
 
     @Override
-    public void initialize(WikiEngine wikiEngine, Properties properties) throws FilterException {
+    public void  initialize( Engine wikiEngine, Properties properties ) throws FilterException {
 	log.info("initialize");
         super.initialize(wikiEngine,properties);
 	if (properties.containsKey(PARAM_ICONSIZE)) {
@@ -78,7 +78,7 @@ public class EmojiFilter extends BasicPageFilter {
     }
 
     @Override
-    public String postTranslate(WikiContext wikiContext, String content) throws FilterException {
+    public String postTranslate(Context wikiContext, String content) throws FilterException {
 	log.info("postTranslate");
         content = super.postTranslate(wikiContext,content);
         //log.info("content="+content);

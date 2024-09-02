@@ -3,37 +3,27 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.digitalspider.jspwiki.plugin</groupId>
+   <parent>
+        <groupId>com.jspwiki.plugin</groupId>
+        <artifactId>DSPluginsPack</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    
   <artifactId>PanelPlugin</artifactId>
   <packaging>jar</packaging>
-  <version>0.1</version>
+  
   <name>PanelPlugin</name>
   <scm>
     <developerConnection>scm:git:https://github.com/digitalspider/jspwiki-plugins.git</developerConnection>
   </scm>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.jspwiki</groupId>
-      <artifactId>jspwiki-war</artifactId>
-      <version>2.10.1</version>
-      <classifier>classes</classifier>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
+ 
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.1</version>
       </plugin>
+      <!--
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
@@ -41,11 +31,7 @@
             <phase>package</phase>
             <configuration>
               <tasks>
-                <!--
-                  Place any Ant task here. You can add anything
-                  you can add between <target> and </target> in a
-                  build.xml.
-                -->
+              
                 <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="dist/${project.artifactId}-${project.version}.${project.packaging}"/>
                 <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="${tomcat.home}/webapps/JSPWiki/WEB-INF/lib/${project.artifactId}-${project.version}.${project.packaging}"/>
               </tasks>
@@ -55,7 +41,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
+      </plugin>-->
     </plugins>
   </build>
 

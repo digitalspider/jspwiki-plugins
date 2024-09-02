@@ -20,8 +20,9 @@ package de.jumlinator.treeplugin;
 
 import java.util.*;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.wiki.WikiContext;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.wiki.api.core.Context;
+import org.apache.wiki.render.RenderingManager;
 
 
 /**
@@ -64,7 +65,7 @@ public class Tree
 	 * @param pagetext
 	 * @param context
 	 */
-	protected void initialize(String pagetext, WikiContext context) 
+	protected void initialize(String pagetext, Context context) 
 	{
 		treeItems.clear();
 		
@@ -110,7 +111,8 @@ public class Tree
 					}
 				
 					line = line.trim();
-					String link = context.getEngine().textToHTML(context, line);
+                                         
+					String link = context.getEngine().getManager(RenderingManager.class).textToHTML(context, line);
 					String text = line.replace("[", "");
 					text = text.replace("]", "");
 					int pipe = text.indexOf("|");

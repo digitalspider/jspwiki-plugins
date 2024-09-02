@@ -24,10 +24,11 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.wiki.WikiContext;
+import org.apache.wiki.api.core.Context;
 import org.apache.wiki.api.exceptions.FilterException;
-import org.apache.wiki.api.filters.BasicPageFilter;
+import org.apache.wiki.api.filters.BasePageFilter;
 
-public class AutoLinkHtmlFilter extends BasicPageFilter {
+public class AutoLinkHtmlFilter extends BasePageFilter {
 
 	private static final Logger log = Logger.getLogger(AutoLinkHtmlFilter.class);
 
@@ -38,8 +39,8 @@ public class AutoLinkHtmlFilter extends BasicPageFilter {
     public static final String REGEX_HTML_NOFORMAT = "\\{\\{\\{(.|\n)*?\\}\\}\\}";
 
     @Override
-    public String preSave(WikiContext wikiContext, String content) throws FilterException {
-        content = super.preSave(wikiContext,content);
+    public String preTranslate(final Context wikiContext, String content) throws FilterException {
+        content = super.preTranslate(wikiContext,content);
         log.info("content="+content);
         Collection<String> htmlStrings = findByRegex(content,REGEX_HTML);
         Collection<String> linkedHtmlStrings = findByRegex(content,REGEX_HTML_LINKED);

@@ -15,24 +15,9 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.PageManager;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.plugin.WikiPlugin;
-import org.apache.wiki.parser.JSPWikiMarkupParser;
-import org.apache.wiki.parser.WikiDocument;
-import org.apache.wiki.plugin.DefaultPluginManager;
-import org.apache.wiki.render.XHTMLRenderer;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -46,8 +31,13 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.wiki.api.core.Engine;
+import org.apache.wiki.api.plugin.Plugin;
+import org.apache.wiki.plugin.PluginManager;
+import org.apache.wiki.render.RenderingManager;
 
-public class JDBCPlugin implements WikiPlugin {
+public class JDBCPlugin implements Plugin {
 
 	private final Logger log = Logger.getLogger(JDBCPlugin.class);
 
@@ -109,12 +99,12 @@ public class JDBCPlugin implements WikiPlugin {
     private DataSource ds = null;
 
 	@Override
-	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+	public String execute(org.apache.wiki.api.core.Context  wikiContext, Map<String, String> params) throws PluginException {
         setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
-        WikiEngine engine = wikiContext.getEngine();
+        Engine engine = wikiContext.getEngine();
         Properties props = engine.getWikiProperties();
 
         // Validate all parameters
@@ -158,7 +148,7 @@ public class JDBCPlugin implements WikiPlugin {
             }
 
             log.info("result="+buffer.toString());
-            result = engine.textToHTML(wikiContext,buffer.toString());
+            result = engine.getManager(RenderingManager.class).textToHTML(wikiContext,buffer.toString());
 
             result = "<div class='"+className+"'>"+result+"</div>";
         } catch (Exception e) {

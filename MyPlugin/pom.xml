@@ -3,29 +3,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.jspwiki.plugin</groupId>
+   <parent>
+        <groupId>com.jspwiki.plugin</groupId>
+        <artifactId>DSPluginsPack</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+  
   <artifactId>MyPlugin</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  
   <name>Maven Quick Start</name>
   <scm>
     <developerConnection>scm:git:https://github.com/digitalspider/jspwiki-plugins.git</developerConnection>
   </scm>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.jspwiki</groupId>
-      <artifactId>jspwiki-war</artifactId>
-      <version>2.10.1</version>
-      <classifier>classes</classifier>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
+ 
 
   <build>
     <plugins>

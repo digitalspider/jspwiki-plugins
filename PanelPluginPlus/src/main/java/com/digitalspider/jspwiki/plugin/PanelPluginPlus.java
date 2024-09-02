@@ -15,14 +15,9 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.ui.TemplateManager;
 
@@ -30,12 +25,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.wiki.api.core.Context;
+import org.apache.wiki.api.core.Engine;
+import org.apache.wiki.api.plugin.Plugin;
+import org.apache.wiki.plugin.PluginManager;
+import org.apache.wiki.render.RenderingManager;
 
-public class PanelPlugin implements WikiPlugin {
+public class PanelPluginPlus implements Plugin {
 
-	private final Logger log = Logger.getLogger(PanelPlugin.class);
+    private final Logger log = Logger.getLogger(PanelPluginPlus.class);
 
-    public static final String DEFAULT_ID = "123";
+    public static final String DEFAULT_ID = "1234";
     public static final String DEFAULT_CLASSID = "class";
     public static final Boolean DEFAULT_SHOWEDIT = false;
     public static final String DEFAULT_HEADER = "";
@@ -58,14 +59,13 @@ public class PanelPlugin implements WikiPlugin {
     private static final String RESOURCE_PANEL_CSS = "panel/panel.css";
     private List<String> pageResources = new ArrayList<String>();
 
-
-	@Override
-	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+    @Override
+    public String execute(Context wikiContext, Map<String, String> params) throws PluginException {
         setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
-        WikiEngine engine = wikiContext.getEngine();
+        Engine engine = wikiContext.getEngine();
         Properties props = engine.getWikiProperties();
 
         addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_JSCOLOR_JS);
@@ -75,14 +75,13 @@ public class PanelPlugin implements WikiPlugin {
         // Validate all parameters
         validateParams(props, params);
 
-
         try {
             String htmlBody = "";
             String body = params.get(DefaultPluginManager.PARAM_BODY);
             if (StringUtils.isNotBlank(body)) {
-                htmlBody = engine.textToHTML(wikiContext, body);
+                htmlBody = engine.getManager(RenderingManager.class).textToHTML(wikiContext, body);
             }
-            buffer.append("<div class='panel panel-"+classId+"' id='panel-"+id+"'>\n");
+            buffer.append("<div class='panel panel-" + classId + "' id='panel-" + id + "'>\n");
             if (showEdit) {
                 buffer.append("<div class='editToggle' id='" + id + "' onclick='toggleEditMode(this.id,\"" + classId + "\")'>Edit</div>\n");
             }
@@ -95,32 +94,31 @@ public class PanelPlugin implements WikiPlugin {
             }
             buffer.append("</div>\n");
             buffer.append("\n");
-            buffer.append("<div id='colorSelectDiv' style='display:none;position:relative;width:150px;height:150px;'>\n"+
-            "<div id='elementSelector'>\n"+
-                    "Select&nbsp;Element:&nbsp;<span class='code' id='selectId' onclick='selectChangeElement(this.id)'>ID</span>&nbsp;|&nbsp;<span class='code' id='selectClass' onclick='selectChangeElement(this.id)'>CLASS</span>&nbsp;|&nbsp;<span class='code' id='selectBody' onclick='selectChangeElement(this.id)'>BODY</span>&nbsp;|&nbsp;<span class='code' onclick='closeColorMap()'>CLOSE</span>\n"+
-            "</div>\n"+
-            "<div id='styleSelectorColor' style='display:none'>\n"+
-                    "Select&nbsp;Color:&nbsp;<span class='code' id='selectTextColor' onclick='selectStyleColor(this.id)'>Text</span>&nbsp;|&nbsp;<span class='code' id='selectBackgroundColor' onclick='selectStyleColor(this.id)'>Background</span>&nbsp;|&nbsp;<span class='code' id='selectBorderColor' onclick='selectStyleColor(this.id)'>Border</span>\n"+
-            "</div>\n"+
-            "<div id='styleSelector' style='display:none'>\n"+
-                    "Select&nbsp;Style:&nbsp;<span class='code' id='selectFont' onclick='selectStyle(this.id)'>Font</span>&nbsp;|&nbsp;<span class='code' id='selectFontSize' onclick='selectStyle(this.id)'>Font Size</span>&nbsp;|&nbsp;<span class='code' id='selectBorder' onclick='selectStyle(this.id)'>Border</span>&nbsp;|&nbsp;<span class='code' id='selectCorners' onclick='selectStyle(this.id)'>Corners</span><br/>\n"+
-            "<span class='code' id='selectPadding' onclick='selectStyle(this.id)'>Padding</span>&nbsp;|&nbsp;<span class='code' id='selectMargin' onclick='selectStyle(this.id)'>Margin</span>|&nbsp;<span class='code' id='selectMinWidth' onclick='selectStyle(this.id)'>MinWidth</span>&nbsp;|&nbsp;<span class='code' id='selectMinHeight' onclick='selectStyle(this.id)'>MinHeight</span>&nbsp;|&nbsp;<span class='code' id='selectScroll' onclick='selectStyle(this.id)'>Scroll</span>&nbsp;|&nbsp;<span class='code' id='selectCustom' onclick='selectStyle(this.id)'>Custom</span>\n"+
-            "</div>\n"+
-            "<input class='color' id='colorInput' onchange='alterColor(\"#\"+this.color)' style='display:none'></input>\n"+
-            "<input class='styleInput' id='styleInput' onchange='alterStyle(this.value)' style='display:none'></input>\n"+
-            "<textarea class='customInput' id='customInput' onchange='alterStyle(this.value)' style='display:none'></textarea>\n"+
-            "</div>\n");
+            buffer.append("<div id='colorSelectDiv' style='display:none;position:relative;width:150px;height:150px;'>\n"
+                    + "<div id='elementSelector'>\n"
+                    + "Select&nbsp;Element:&nbsp;<span class='code' id='selectId' onclick='selectChangeElement(this.id)'>ID</span>&nbsp;|&nbsp;<span class='code' id='selectClass' onclick='selectChangeElement(this.id)'>CLASS</span>&nbsp;|&nbsp;<span class='code' id='selectBody' onclick='selectChangeElement(this.id)'>BODY</span>&nbsp;|&nbsp;<span class='code' onclick='closeColorMap()'>CLOSE</span>\n"
+                    + "</div>\n"
+                    + "<div id='styleSelectorColor' style='display:none'>\n"
+                    + "Select&nbsp;Color:&nbsp;<span class='code' id='selectTextColor' onclick='selectStyleColor(this.id)'>Text</span>&nbsp;|&nbsp;<span class='code' id='selectBackgroundColor' onclick='selectStyleColor(this.id)'>Background</span>&nbsp;|&nbsp;<span class='code' id='selectBorderColor' onclick='selectStyleColor(this.id)'>Border</span>\n"
+                    + "</div>\n"
+                    + "<div id='styleSelector' style='display:none'>\n"
+                    + "Select&nbsp;Style:&nbsp;<span class='code' id='selectFont' onclick='selectStyle(this.id)'>Font</span>&nbsp;|&nbsp;<span class='code' id='selectFontSize' onclick='selectStyle(this.id)'>Font Size</span>&nbsp;|&nbsp;<span class='code' id='selectBorder' onclick='selectStyle(this.id)'>Border</span>&nbsp;|&nbsp;<span class='code' id='selectCorners' onclick='selectStyle(this.id)'>Corners</span><br/>\n"
+                    + "<span class='code' id='selectPadding' onclick='selectStyle(this.id)'>Padding</span>&nbsp;|&nbsp;<span class='code' id='selectMargin' onclick='selectStyle(this.id)'>Margin</span>|&nbsp;<span class='code' id='selectMinWidth' onclick='selectStyle(this.id)'>MinWidth</span>&nbsp;|&nbsp;<span class='code' id='selectMinHeight' onclick='selectStyle(this.id)'>MinHeight</span>&nbsp;|&nbsp;<span class='code' id='selectScroll' onclick='selectStyle(this.id)'>Scroll</span>&nbsp;|&nbsp;<span class='code' id='selectCustom' onclick='selectStyle(this.id)'>Custom</span>\n"
+                    + "</div>\n"
+                    + "<input class='color' id='colorInput' onchange='alterColor(\"#\"+this.color)' style='display:none'></input>\n"
+                    + "<input class='styleInput' id='styleInput' onchange='alterStyle(this.value)' style='display:none'></input>\n"
+                    + "<textarea class='customInput' id='customInput' onchange='alterStyle(this.value)' style='display:none'></textarea>\n"
+                    + "</div>\n");
             buffer.append("\n");
 
             result = buffer.toString();
         } catch (Exception e) {
-            log.error(e,e);
+            log.error(e, e);
             throw new PluginException(e.getMessage());
         }
 
-
-		return result;
-	}
+        return result;
+    }
 
     protected void validateParams(Properties props, Map<String, String> params) throws PluginException {
         String paramName;
@@ -177,10 +175,10 @@ public class PanelPlugin implements WikiPlugin {
 
     }
 
-    public void addUniqueTemplateResourceRequest(WikiContext wikiContext, String resourceType, String resourceName) {
+    public void addUniqueTemplateResourceRequest(Context wikiContext, String resourceType, String resourceName) {
         String pageName = wikiContext.getPage().getName();
         int pageVersion = wikiContext.getPage().getVersion();
-        String pageResource = pageName+":"+pageVersion+":"+resourceType+":"+resourceName;
+        String pageResource = pageName + ":" + pageVersion + ":" + resourceType + ":" + resourceName;
         if (!pageResources.contains(pageResource)) {
             TemplateManager.addResourceRequest(wikiContext, resourceType, resourceName);
             pageResources.add(pageResource);

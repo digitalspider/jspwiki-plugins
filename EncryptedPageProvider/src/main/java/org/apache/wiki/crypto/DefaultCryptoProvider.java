@@ -19,12 +19,9 @@
 package org.apache.wiki.crypto;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiEngine;
 import org.apache.wiki.api.exceptions.EncryptionException;
 import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
-import org.apache.wiki.api.exceptions.ProviderException;
 import org.apache.wiki.util.TextUtil;
 
 import java.io.File;
@@ -37,6 +34,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import org.apache.wiki.api.core.Engine;
 
 /**
  * Provides cryptographic encryption and decryption services.
@@ -98,7 +96,7 @@ public class DefaultCryptoProvider implements CryptoProvider {
     private String algorithm;
 
     @Override
-    public void initialize(WikiEngine engine, Properties properties) throws NoRequiredPropertyException, IOException {
+    public void initialize(Engine engine, Properties properties) throws NoRequiredPropertyException, IOException {
         Properties cryptoProperties = new Properties();
         String filename = TextUtil.getStringProperty(properties,PROP_CRYPTO_FILE, CryptoProvider.DEFAULT_CRYPTO_FILENAME);
         File f = new File(filename);

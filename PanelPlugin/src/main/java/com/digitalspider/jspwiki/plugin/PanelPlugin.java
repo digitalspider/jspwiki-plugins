@@ -15,14 +15,9 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.plugin.DefaultPluginManager;
 import org.apache.wiki.ui.TemplateManager;
 
@@ -32,8 +27,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.wiki.api.core.Context;
+import org.apache.wiki.api.core.Engine;
+import org.apache.wiki.api.plugin.Plugin;
+import org.apache.wiki.plugin.PluginManager;
+import org.apache.wiki.render.RenderingManager;
 
-public class PanelPlugin implements WikiPlugin {
+public class PanelPlugin implements Plugin {
 
 	private final Logger log = Logger.getLogger(PanelPlugin.class);
 
@@ -112,12 +113,12 @@ public class PanelPlugin implements WikiPlugin {
 
 
 	@Override
-	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+	public String execute(Context wikiContext, Map<String, String> params) throws PluginException {
         setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
-        WikiEngine engine = wikiContext.getEngine();
+        Engine engine = wikiContext.getEngine();
         Properties props = engine.getWikiProperties();
 
         addUniqueTemplateResourceRequest(wikiContext, TemplateManager.RESOURCE_SCRIPT, RESOURCE_PANEL_JS);
@@ -133,7 +134,8 @@ public class PanelPlugin implements WikiPlugin {
             String htmlBody = "";
             String body = params.get(DefaultPluginManager.PARAM_BODY);
             if (StringUtils.isNotBlank(body)) {
-                htmlBody = engine.textToHTML(wikiContext, body);
+                
+                htmlBody = engine.getManager(RenderingManager.class).textToHTML(wikiContext, body);
             }
             String elementId = classId+"-"+id;
             buffer.append("<div class='panel panel-"+classId+"' id='panel-"+elementId+"'\n");
@@ -422,7 +424,7 @@ public class PanelPlugin implements WikiPlugin {
 
     }
 
-    public void addUniqueTemplateResourceRequest(WikiContext wikiContext, String resourceType, String resourceName) {
+    public void addUniqueTemplateResourceRequest(Context wikiContext, String resourceType, String resourceName) {
         HashMap<String,Vector<String>> resourcemap = (HashMap<String,Vector<String>>) wikiContext.getVariable( TemplateManager.RESOURCE_INCLUDES );
         if (resourcemap != null && !resourcemap.isEmpty()) {
             Vector<String> resources = resourcemap.get(resourceType);

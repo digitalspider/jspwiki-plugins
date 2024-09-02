@@ -15,26 +15,11 @@
  */
 package com.digitalspider.jspwiki.plugin;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.PageManager;
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.filters.PageFilter;
-import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.modules.WikiModuleInfo;
-import org.apache.wiki.parser.JSPWikiMarkupParser;
-import org.apache.wiki.parser.WikiDocument;
-import org.apache.wiki.plugin.DefaultPluginManager;
-import org.apache.wiki.render.XHTMLRenderer;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,8 +27,18 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.wiki.api.core.Context;
+import org.apache.wiki.api.core.Engine;
+import org.apache.wiki.api.plugin.Plugin;
+import org.apache.wiki.filters.FilterManager;
+import org.apache.wiki.pages.PageManager;
+import org.apache.wiki.plugin.PluginManager;
+import org.apache.wiki.render.RenderingManager;
+import org.apache.wiki.ui.EditorManager;
+import org.apache.wiki.ui.TemplateManager;
 
-public class PluginListPlugin implements WikiPlugin {
+public class PluginListPlugin implements Plugin {
 
 	private final Logger log = Logger.getLogger(PluginListPlugin.class);
 
@@ -65,23 +60,23 @@ public class PluginListPlugin implements WikiPlugin {
 
     private static final String DELIM = " | ";
 	@Override
-	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+	public String execute(Context wikiContext, Map<String, String> params) throws PluginException {
         setLogForDebug(params.get(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         String result = "";
         StringBuffer buffer = new StringBuffer();
-        WikiEngine engine = wikiContext.getEngine();
+        Engine engine = wikiContext.getEngine();
         Properties props = engine.getWikiProperties();
 
         // Validate all parameters
         validateParams(props, params);
 
-        PageManager pageManager = engine.getPageManager();
-        Collection<DefaultPluginManager.WikiPluginInfo> pluginModules = engine.getPluginManager().modules();
-        Collection<PageFilter> filterModules = engine.getFilterManager().modules();
-        Collection<WikiModuleInfo> pageModules = engine.getPageManager().modules(); // null
-        Collection<WikiModuleInfo> templateModules = engine.getTemplateManager().modules(); // empty list
-        Collection<WikiModuleInfo> editorModules = engine.getEditorManager().modules();
+        PageManager pageManager = engine.getManager(PageManager.class);
+        Collection<WikiModuleInfo> pluginModules = engine.getManager(PluginManager.class).modules();
+        Collection<WikiModuleInfo> filterModules = engine.getManager(FilterManager.class).modules();
+        //Collection<WikiModuleInfo> pageModules = engine.getManager(PageManager.class).modules(); // null
+        Collection<WikiModuleInfo> templateModules = engine.getManager(TemplateManager.class).modules(); // empty list
+        Collection<WikiModuleInfo> editorModules = engine.getManager(EditorManager.class).modules();
 
         try {
             buffer.append("|| Module Type || Name (Alias) || Class || Author || Min-Max");
@@ -91,14 +86,14 @@ public class PluginListPlugin implements WikiPlugin {
             buffer.append("\n");
             String baseUrl = engine.getBaseURL();
             if (typeFilter == ModuleType.ALL || typeFilter == ModuleType.PLUGIN) {
-                List<DefaultPluginManager.WikiPluginInfo> pluginModuleList = new ArrayList<DefaultPluginManager.WikiPluginInfo>();
+                List<WikiModuleInfo> pluginModuleList = new ArrayList<>();
                 pluginModuleList.addAll(pluginModules);
                 Collections.sort(pluginModuleList,new WikiPluginInfoComparator());
-                for (DefaultPluginManager.WikiPluginInfo info : pluginModuleList) {
+                for (WikiModuleInfo info : pluginModuleList) {
                     String name = info.getName();
                     String author = info.getAuthor();
-                    buffer.append("| Plugin" + DELIM + getNameLinked(pageManager, name) + getAlias(info.getAlias()) +
-                            DELIM + getClassNameLinked(info.getClassName()) + DELIM + getNameLinked(pageManager, author) +
+                    buffer.append("| Plugin" + DELIM + getNameLinked(pageManager, name) +
+                            DELIM + getClassNameLinked(info.getClass().getSimpleName()) + DELIM + getNameLinked(pageManager, author) +
                             DELIM + info.getMinVersion() + "-" + info.getMaxVersion());
                     if (showStyle) {
                         buffer.append(
@@ -109,10 +104,10 @@ public class PluginListPlugin implements WikiPlugin {
                 }
             }
             if (typeFilter == ModuleType.ALL || typeFilter == ModuleType.FILTER) {
-                List<PageFilter> filterModuleList = new ArrayList<PageFilter>();
+                List<WikiModuleInfo> filterModuleList = new ArrayList<WikiModuleInfo>();
                 filterModuleList.addAll(filterModules);
-                Collections.sort(filterModuleList,new PageFilterComparator());
-                for (PageFilter filter : filterModuleList) {
+                Collections.sort(filterModuleList,new WikiModuleInfoComparator());
+                for (WikiModuleInfo filter : filterModuleList) {
                     String name = filter.getClass().getSimpleName();
                     buffer.append("| Filter" + DELIM + getNameLinked(pageManager, name) +
                             DELIM + getClassNameLinked(filter.getClass().getName()) + DELIM + "" +
@@ -146,7 +141,7 @@ public class PluginListPlugin implements WikiPlugin {
             }
 
             log.info("result="+buffer.toString());
-            result = engine.textToHTML(wikiContext,buffer.toString());
+            result = engine.getManager(RenderingManager.class).textToHTML(wikiContext,buffer.toString());
 
             result = "<div class='"+className+"'>"+result+"</div>";
         } catch (Exception e) {
@@ -250,19 +245,19 @@ public class PluginListPlugin implements WikiPlugin {
         return result;
     }
 
-    public class WikiModuleInfoComparator implements Comparator<WikiModuleInfo> {
+    public static class WikiModuleInfoComparator implements Comparator<WikiModuleInfo> {
         public int compare(WikiModuleInfo m1, WikiModuleInfo m2) {
             return m1.getClass().getName().compareTo(m2.getClass().getName());
         }
     }
 
-    public class WikiPluginInfoComparator implements Comparator<DefaultPluginManager.WikiPluginInfo> {
-        public int compare(DefaultPluginManager.WikiPluginInfo m1, DefaultPluginManager.WikiPluginInfo m2) {
-            return m1.getClassName().compareTo(m2.getClassName());
+    public static class WikiPluginInfoComparator implements Comparator<WikiModuleInfo> {
+        public int compare(WikiModuleInfo m1, WikiModuleInfo m2) {
+            return m1.getClass().getSimpleName().compareTo(m2.getClass().getSimpleName());
         }
     }
 
-    public class PageFilterComparator implements Comparator<PageFilter> {
+    public static class PageFilterComparator implements Comparator<PageFilter> {
         public int compare(PageFilter pf1, PageFilter pf2) {
             return pf1.getClass().getSimpleName().compareTo(pf2.getClass().getSimpleName());
         }

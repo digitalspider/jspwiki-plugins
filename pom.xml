@@ -2,56 +2,219 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.jspwiki.plugin</groupId>
-  <artifactId>DSPluginsPack</artifactId>
-  <packaging>pom</packaging>
-  <version>0.1</version>
-  <name>Digital Spider Plugins Pack</name>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.jspwiki.plugin</groupId>
+    <artifactId>DSPluginsPack</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>Digital Spider Plugins Pack</name>
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <jspwiki>2.12.2</jspwiki>
+    </properties>
+
+    <modules>
+        <module>AutoLinkHtmlFilter</module>
+        <module>CSVPlugin</module>
+        <module>EmojiFilter</module>
+        <module>EncryptedPageProvider</module>
+        <module>GoComicsPlugin</module>
+        <module>GoogleMapsPlugin</module>
+        <module>HitCountPlugin</module>
+        <module>IFramePlugin</module>
+        <module>ImageGalleryPlugin</module>
+        <module>JDBCPageProvider</module>
+        <module>JDBCPlugin</module>
+        <module>JiraPlugin</module>
+        <module>PanelPlugin</module>
+        <module>PanelPluginPlus</module>
+        <module>PasswordPlugin</module>
+        <module>PluginListPlugin</module>
+        <module>TreePlugin</module>
+        <module>VideoPlugin</module>
+        <module>dist-module</module>
+    </modules>
+    
+    <organization>
+        <name>Github</name>
+        <url>https://github.com/digitalspider</url>
+    </organization>
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/digitalspider/jspwiki-plugins/issues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>None</system>
+        <url>https://github.com/digitalspider/jspwiki-plugins</url>
+    </ciManagement>
+    <distributionManagement>
+        <repository>
+            <id>sonatype-release</id>
+            <layout>default</layout>
+            <name>sonatype releases</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>sonatype-snapshot</id>
+            <layout>default</layout>
+            <name>sonatype releases</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <site>
+            <id>website</id>
+            <url>https://github.com/digitalspider/jspwiki-plugins</url>
+        </site>
+    </distributionManagement>
+    <inceptionYear>2014</inceptionYear>
+    
+    <scm>
+        <developerConnection>scm:git:https://github.com/digitalspider/jspwiki-plugins.git</developerConnection>
+        <connection>scm:git:https://github.com/digitalspider/jspwiki-plugins.git</connection>
+        <url>https://github.com/digitalspider/jspwiki-plugins.git/</url>
+    </scm>
+    
   
-  <modules>
-    <module>AutoLinkHtmlFilter</module>
-    <module>EmojiFilter</module>
-    <module>EncryptedPageProvider</module>
-    <module>GoComicsPlugin</module>
-    <module>GoogleMapsPlugin</module>
-    <module>HitCountPlugin</module>
-    <module>IFramePlugin</module>
-    <module>ImageGalleryPlugin</module>
-    <module>JDBCPageProvider</module>
-    <module>JDBCPlugin</module>
-    <module>JiraPlugin</module>
-    <module>MyPlugin</module>
-    <module>PanelPlugin</module>
-    <!--
-    <module>PanelPluginPlus</module>
-    -->
-    <module>PasswordPlugin</module>
-    <module>PluginListPlugin</module>
-    <module>TreePlugin</module>
-    <module>VideoPlugin</module>
-  </modules>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>3.1.1</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+    <dependencyManagement>
+        
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.jspwiki</groupId>
+                <artifactId>jspwiki-war</artifactId>
+                <version>${jspwiki}</version>
+                <type>war</type>
+            </dependency>
+            <dependency>
+                <groupId>commons-validator</groupId>
+                <artifactId>commons-validator</artifactId>
+                <version>1.9.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jspwiki</groupId>
+            <artifactId>jspwiki-war</artifactId>
+            <scope>provided</scope>
+            <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jspwiki</groupId>
+            <artifactId>jspwiki-main</artifactId>
+            <scope>provided</scope>
+            <version>${jspwiki}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <developers>
+        <developer>
+            <id>as</id>
+            <name>Anonymous</name>
+            <email>n/a</email>
+            <url>n/a</url>
+        </developer>
+    </developers>
+    <contributors>
+    </contributors>
+    <licenses>
+        <license>
+            <name>Apache-2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    
+    <profiles>
+        
+        <!-- START SNIPPET: release-profile -->
+        <profile>
+            <id>release</id>
 
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.jspwiki</groupId>
-      <artifactId>jspwiki-war</artifactId>
-      <version>2.10.1</version>
-      <classifier>classes</classifier>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-validator</groupId>
-      <artifactId>commons-validator</artifactId>
-      <version>1.4.0</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
+            <build>
+                <plugins>
+                    
+                    
+                    <!-- We want to deploy the artifact to a staging location for perusal -->
+                    <plugin>
+                        <inherited>true</inherited>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <updateReleaseInfo>true</updateReleaseInfo>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                   
+                    <!-- We want to sign the artifact, the POM, and all attached artifacts -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <executions>
+                            <execution>
+                                <id>sign-release-artifacts</id>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+        
+        
+    
 </project>

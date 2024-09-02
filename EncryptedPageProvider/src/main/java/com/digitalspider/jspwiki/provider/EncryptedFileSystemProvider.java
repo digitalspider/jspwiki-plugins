@@ -31,6 +31,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import org.apache.wiki.api.core.Engine;
+import org.apache.wiki.api.core.Page;
+import org.apache.wiki.providers.FileSystemProvider;
 
 /**
  * This class uses a {@link org.apache.wiki.crypto.CryptoProvider} to encrypt and decrypt page content.
@@ -90,7 +93,7 @@ public class EncryptedFileSystemProvider extends FileSystemProvider {
     private String suffix;
 
     @Override
-    public void initialize(WikiEngine engine, Properties properties) throws NoRequiredPropertyException, IOException {
+    public void initialize(Engine engine, Properties properties) throws NoRequiredPropertyException, IOException {
         super.initialize(engine, properties);
 
         String providerClassName = TextUtil.getStringProperty(properties, PROP_CRYPTO_PROVIDER, "org.apache.wiki.crypto.DefaultCryptoProvider");
@@ -150,7 +153,7 @@ public class EncryptedFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public void putPageText(WikiPage page, String text) throws ProviderException {
+    public void putPageText(Page page, String text) throws ProviderException {
         try {
             text = prefix + text;
             text = new String(cryptoProvider.encrypt(key, text.getBytes()));

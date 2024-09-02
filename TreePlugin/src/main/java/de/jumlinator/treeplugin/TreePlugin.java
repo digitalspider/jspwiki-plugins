@@ -20,11 +20,12 @@ package de.jumlinator.treeplugin;
 
 import java.util.*;
 
-import org.apache.wiki.WikiContext;
-import org.apache.wiki.WikiEngine;
-import org.apache.wiki.WikiPage;
+import org.apache.wiki.api.core.Context;
+import org.apache.wiki.api.core.Engine;
+import org.apache.wiki.api.core.Page;
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.plugin.WikiPlugin;
+import org.apache.wiki.api.plugin.Plugin;
+import org.apache.wiki.pages.PageManager;
 import org.apache.wiki.util.TextUtil;
 
 /**
@@ -48,28 +49,28 @@ import org.apache.wiki.util.TextUtil;
 	
 	Version 0.9 beta or better
  */
-public class TreePlugin implements WikiPlugin 
+public class TreePlugin implements Plugin 
 {
 	// Multiple trees ca be defined
 	public static HashMap<String, Tree> trees = new HashMap<String, Tree>();
 
 	@Override
-	public String execute(WikiContext context, Map<String, String> params) throws PluginException 
+	public String execute(Context context, Map<String, String> params) throws PluginException 
 	{
 		String result = "";
-		WikiEngine engine = context.getEngine();
+		Engine engine = context.getEngine();
 		
 		String treePageName = TextUtil.replaceEntities( (String) params.get( "page" ));
 		
 		try  
 		{
-			WikiPage page = engine.getPage(treePageName);
+			Page page = engine.getManager(PageManager.class).getPage(treePageName);
 			if (null == page)
 			{
 				return "Wikipage " + treePageName + " does not exist!";
 			}
 			
-			String pageText = engine.getPureText(page);
+			String pageText =  engine.getManager(PageManager.class).getPureText(page);
 			
 			Tree tree = (Tree)trees.get(treePageName);
 			if (null == tree)
@@ -79,7 +80,7 @@ public class TreePlugin implements WikiPlugin
 			}
 			
 			// Updating the tree
-			Date actPageDate = engine.getPage(treePageName).getLastModified();
+			Date actPageDate = engine.getManager(PageManager.class).getPage(treePageName).getLastModified();
 			if (null == tree.pageDate || actPageDate.after(tree.pageDate) ) 
 			{
 				tree.initialize(pageText, context);
@@ -104,7 +105,7 @@ public class TreePlugin implements WikiPlugin
 	 * @param tree
 	 * @return
 	 */
-	private String createHtml(WikiContext context, String currentItemName, WikiEngine engine, Tree tree) 
+	private String createHtml(Context context, String currentItemName, Engine engine, Tree tree) 
 	{
 		String imgFolderClosed = context.getEngine().getBaseURL()+ "images/folder_closed.png";
 		String imgFolderOpen = context.getEngine().getBaseURL()+ "images/folder_open.png";
@@ -162,7 +163,7 @@ public class TreePlugin implements WikiPlugin
 	 * @param parent
 	 * @param context
 	 */
-	private void createTreeItemHtml(StringBuffer buffer, TreeItem parent, WikiContext context) 
+	private void createTreeItemHtml(StringBuffer buffer, TreeItem parent, Context context) 
 	{
 		if (null != parent.children && parent.children.size() > 0)
 		{

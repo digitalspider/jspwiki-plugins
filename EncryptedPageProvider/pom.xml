@@ -2,53 +2,70 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.digitalspider.jspwiki.filter</groupId>
-  <artifactId>EncryptedPageProvider</artifactId>
-  <packaging>jar</packaging>
-  <version>0.1</version>
-  <name>EncryptedPageProvider</name>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.jspwiki</groupId>
-      <artifactId>jspwiki-war</artifactId>
-      <version>2.10.2-SNAPSHOT</version>
-      <classifier>classes</classifier>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jspwiki.plugin</groupId>
+        <artifactId>DSPluginsPack</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <packaging>jar</packaging>
+    <artifactId>EncryptedPageProvider</artifactId>
+  
+    <name>EncryptedPageProvider</name>
+    <dependencies>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
+        </dependency>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <configuration>
-              <tasks>
-                <!--
-                  Place any Ant task here. You can add anything
-                  you can add between <target> and </target> in a
-                  build.xml.
-                -->
-                <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="dist/${project.artifactId}-${project.version}.${project.packaging}"/>
-                <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="${tomcat.home}/webapps/testwiki/WEB-INF/lib/${project.artifactId}-${project.version}.${project.packaging}"/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+
+        <dependency>
+            <groupId>net.sourceforge.stripes</groupId>
+            <artifactId>tests</artifactId>
+            <version>1.5.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.stripes</groupId>
+            <artifactId>stripes</artifactId>
+            <version>1.6.0</version>
+            <scope>test</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.apache.jspwiki</groupId>
+            <artifactId>jspwiki-main</artifactId>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <version>${jspwiki}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <!--
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <configuration>
+                            <tasks>
+                            
+                                <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="dist/${project.artifactId}-${project.version}.${project.packaging}"/>
+                                <copy file="target/${project.artifactId}-${project.version}.${project.packaging}" tofile="${tomcat.home}/webapps/testwiki/WEB-INF/lib/${project.artifactId}-${project.version}.${project.packaging}"/>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>-->
+        </plugins>
+    </build>
 
 </project>

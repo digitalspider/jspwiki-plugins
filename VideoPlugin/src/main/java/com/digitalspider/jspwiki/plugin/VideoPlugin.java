@@ -21,13 +21,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiContext;
+import org.apache.wiki.api.core.Context;
 import org.apache.wiki.api.exceptions.PluginException;
-import org.apache.wiki.api.plugin.WikiPlugin;
+import org.apache.wiki.api.plugin.Plugin;
 
-public class VideoPlugin implements WikiPlugin {
+public class VideoPlugin implements Plugin {
 
 	private final Logger log = Logger.getLogger(VideoPlugin.class);
 
@@ -51,7 +51,7 @@ public class VideoPlugin implements WikiPlugin {
 	public static final String REGEX_YOUTUBE="http(s)?://(?:www\\.)?(?:youtube\\.com|youtu\\.be)\\/(?:watch\\?v=)?(.+)";
 
 	@Override
-	public String execute(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+	public String execute(Context wikiContext, Map<String, String> params) throws PluginException {
 		log.info("STARTED");
 		String result = "";
 
@@ -71,7 +71,7 @@ public class VideoPlugin implements WikiPlugin {
 		return result;
 	}
 
-	protected void validateParams(WikiContext wikiContext, Map<String, String> params) throws PluginException {
+	protected void validateParams(Context wikiContext, Map<String, String> params) throws PluginException {
 		String paramName;
 		String param;
 

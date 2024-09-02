@@ -17,15 +17,11 @@ package com.digitalspider.jspwiki.plugin;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiPage;
-import org.apache.wiki.api.engine.PluginManager;
 import org.apache.wiki.api.exceptions.NoRequiredPropertyException;
 import org.apache.wiki.api.exceptions.ProviderException;
-import org.apache.wiki.providers.WikiPageProvider;
 import org.apache.wiki.search.QueryItem;
 
 import java.io.IOException;
@@ -45,10 +41,18 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.wiki.api.core.Engine;
+import org.apache.wiki.api.core.Page;
+import org.apache.wiki.api.providers.PageProvider;
+import org.apache.wiki.api.search.SearchResult;
+import org.apache.wiki.plugin.PluginManager;
+import org.apache.wiki.search.SearchMatcher;
 
-public class JDBCPageProvider implements WikiPageProvider {
+public class JDBCPageProvider implements PageProvider {
 
 	private final Logger log = Logger.getLogger(JDBCPageProvider.class);
+
 
     public enum SQLType {
         MYSQL("com.mysql.jdbc.Driver", "jdbc:mysql:", "jdbc:mysql://hostname:portNumber/databaseName"),
@@ -134,10 +138,10 @@ public class JDBCPageProvider implements WikiPageProvider {
     private Integer c3p0MaxPoolSize = DEFAULT_C3P0_MAXPOOLSIZE;
     private String source = DEFAULT_SOURCE;
     private DataSource ds = null;
-    private WikiEngine wikiEngine = null;
+    private Engine wikiEngine = null;
 
     @Override
-    public void initialize(WikiEngine wikiEngine, Properties properties) throws NoRequiredPropertyException, IOException {
+    public void initialize(Engine wikiEngine, Properties properties) throws NoRequiredPropertyException, IOException {
         setLogForDebug(properties.getProperty(PluginManager.PARAM_DEBUG));
         log.info("STARTED");
         this.wikiEngine = wikiEngine;
@@ -146,19 +150,27 @@ public class JDBCPageProvider implements WikiPageProvider {
         validateParams(properties);
 
         String sql = "select 1";
+        ResultSet rs =null;
         try {
             if (c3p0) {
                 initialiseConnectionPool();
             }
-            ResultSet rs = executeQuery(sql,null);
+            rs = executeQuery(sql,null);
             if (rs.next()) {
                 log.info("Successfully initialised JDBCPageProvider");
             }
         } catch (Exception e) {
             log.error("ERROR. "+e.getMessage()+". sql="+sql,e);
             throw new IOException(e.getMessage());
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException ex) {
+                }
+            }
         }
-	}
+    }
 
     protected void validateParams(Properties props) throws NoRequiredPropertyException {
         String paramName;
@@ -480,11 +492,13 @@ public class JDBCPageProvider implements WikiPageProvider {
         return version;
     }
 
+    
+ 
     /**
      *  {@inheritDoc}
      */
     @Override
-    public void putPageText( WikiPage page, String text ) throws ProviderException {
+    public void putPageText( Page page, String text ) throws ProviderException {
         try {
             String changenote = "new page";
             if (page.getAttribute(WikiPage.CHANGENOTE) != null) {
@@ -566,12 +580,13 @@ public class JDBCPageProvider implements WikiPageProvider {
         return null;
     }
 
+    
     /**
      *  {@inheritDoc}
      */
     @Override
-    public Collection findPages( QueryItem[] query ) {
-        List<WikiPage> pages = new ArrayList<WikiPage>();
+    public Collection<SearchResult> findPages( org.apache.wiki.api.search.QueryItem[] query ) {
+        List<SearchResult> pages = new ArrayList<SearchResult>();
         try {
             if (query.length >0 && StringUtils.isNotBlank(query[0].word)) {
                 String sql = "select distinct " + COLUMN_PAGENAME + " from " + getTableName() + " where " + COLUMN_TEXT + " like '%" + query[0].word + "%' and " + COLUMN_STATUS + " != '?'";
@@ -581,7 +596,23 @@ public class JDBCPageProvider implements WikiPageProvider {
                 while (rs.next()) {
                     String pageName = rs.getString(COLUMN_PAGENAME);
                     WikiPage wikiPage = getPageInfo(pageName, findLatestVersion(pageName));
-                    pages.add(wikiPage);
+                    SearchResult  result = new SearchResult() {
+                        @Override
+                        public Page getPage() {
+                            return wikiPage;
+                        }
+
+                        @Override
+                        public int getScore() {
+                            return 1;
+                        }
+
+                        @Override
+                        public String[] getContexts() {
+                            return new String[0];
+                        }
+                    };
+                    pages.add(result);
                 }
             }
         } catch (Exception e) {
